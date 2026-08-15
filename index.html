@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Teste de Microfone - AIPe</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      color: #1f2937;
+    }
+
+    .topo {
+      background: #17365d;
+      color: white;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 28px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.10);
+    }
+
+    h2 {
+      color: #17365d;
+      margin-top: 0;
+    }
+
+    #cronometro {
+      font-size: 38px;
+      font-weight: bold;
+      color: #17365d;
+      margin: 25px 0 8px;
+    }
+
+    #status {
+      font-weight: bold;
+      margin-bottom: 25px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 12px 17px;
+      margin: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #gravar, #continuar {
+      background: #17365d;
+      color: white;
+    }
+
+    #pausar {
+      background: #b45309;
+      color: white;
+    }
+
+    #finalizar {
+      background: #991b1b;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 25px;
+    }
+
+    #diagnostico {
+      margin-top: 20px;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="topo">
+  <h1>TESTE DE MICROFONE – AIPe</h1>
+</div>
+
+<div class="container">
+
+  <div class="card">
+
+    <h2>Teste de gravação</h2>
+
+    <p>
+      Este teste não envia nem armazena o áudio.
+      A gravação permanece somente neste navegador.
+    </p>
+
+    <div id="cronometro">00:00:00</div>
+
+    <div id="status">
+      Aguardando início
+    </div>
+
+    <button id="gravar">
+      🎙 INICIAR
+    </button>
+
+    <button id="pausar" disabled>
+      ⏸ PAUSAR
+    </button>
+
+    <button id="continuar" disabled>
+      ▶ CONTINUAR
+    </button>
+
+    <button id="finalizar" disabled>
+      ⏹ FINALIZAR
+    </button>
+
+    <audio
+      id="player"
+      controls
+      style="display:none;"
+    ></audio>
+
+    <div id="diagnostico">
+      Microfone ainda não testado.
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+let recorder = null;
+let stream = null;
+let partes = [];
+
+let tempoAcumulado = 0;
+let inicioTrecho = null;
+let timer = null;
+
+
+const btnGravar =
+  document.getElementById('gravar');
+
+const btnPausar =
+  document.getElementById('pausar');
+
+const btnContinuar =
+  document.getElementById('continuar');
+
+const btnFinalizar =
+  document.getElementById('finalizar');
+
+
+btnGravar.onclick = iniciar;
+btnPausar.onclick = pausar;
+btnContinuar.onclick = continuar;
+btnFinalizar.onclick = finalizar;
+
+
+async function iniciar() {
+
+  try {
+
+    document.getElementById(
+      'diagnostico'
+    ).innerText =
+      'Solicitando acesso ao microfone...';
+
+
+    stream =
+      await navigator.mediaDevices
+        .getUserMedia({
+          audio: true
+        });
+
+
+    document.getElementById(
+      'diagnostico'
+    ).innerText =
+      'MICROFONE AUTORIZADO E ACESSÍVEL.';
+
+
+    partes = [];
+
+    recorder =
+      new MediaRecorder(stream);
+
+
+    recorder.ondataavailable =
+      function(evento) {
+
+        if (evento.data.size > 0) {
+          partes.push(evento.data);
+        }
+
+      };
+
+
+    recorder.onstop =
+      function() {
+
+        const blob =
+          new Blob(
+            partes,
+            {
+              type:
+                recorder.mimeType ||
+                'audio/webm'
+            }
+          );
+
+
+        const url =
+          URL.createObjectURL(blob);
+
+
+        const player =
+          document.getElementById(
+            'player'
+          );
+
+
+        player.src = url;
+        player.style.display = 'block';
+
+
+        stream
+          .getTracks()
+          .forEach(
+            track => track.stop()
+          );
+
+
+        document.getElementById(
+          'status'
+        ).innerText =
+          'GRAVAÇÃO FINALIZADA — OUÇA ABAIXO';
+
+      };
+
+
+    recorder.start(1000);
+
+
+    tempoAcumulado = 0;
+
+    inicioTrecho =
+      performance.now();
+
+
+    iniciarTimer();
+
+
+    document.getElementById(
+      'status'
+    ).innerText =
+      '● GRAVANDO';
+
+
+    btnGravar.disabled = true;
+    btnPausar.disabled = false;
+    btnContinuar.disabled = true;
+    btnFinalizar.disabled = false;
+
+  }
+
+  catch (erro) {
+
+    console.error(erro);
+
+
+    document.getElementById(
+      'diagnostico'
+    ).innerText =
+      'ERRO: ' +
+      erro.name +
+      ' — ' +
+      erro.message;
+
+
+    alert(
+      'Não foi possível acessar o microfone: ' +
+      erro.name
+    );
+
+  }
+
+}
+
+
+function pausar() {
+
+  if (
+    !recorder ||
+    recorder.state !== 'recording'
+  ) return;
+
+
+  tempoAcumulado +=
+    performance.now() -
+    inicioTrecho;
+
+
+  recorder.pause();
+
+  pararTimer();
+
+
+  document.getElementById(
+    'status'
+  ).innerText =
+    'GRAVAÇÃO PAUSADA';
+
+
+  btnPausar.disabled = true;
+  btnContinuar.disabled = false;
+
+}
+
+
+function continuar() {
+
+  if (
+    !recorder ||
+    recorder.state !== 'paused'
+  ) return;
+
+
+  recorder.resume();
+
+
+  inicioTrecho =
+    performance.now();
+
+
+  iniciarTimer();
+
+
+  document.getElementById(
+    'status'
+  ).innerText =
+    '● GRAVANDO';
+
+
+  btnPausar.disabled = false;
+  btnContinuar.disabled = true;
+
+}
+
+
+function finalizar() {
+
+  if (!recorder) return;
+
+
+  if (
+    recorder.state === 'recording'
+  ) {
+
+    tempoAcumulado +=
+      performance.now() -
+      inicioTrecho;
+
+  }
+
+
+  pararTimer();
+
+  atualizarCronometro();
+
+
+  if (
+    recorder.state !== 'inactive'
+  ) {
+
+    recorder.stop();
+
+  }
+
+
+  btnPausar.disabled = true;
+  btnContinuar.disabled = true;
+  btnFinalizar.disabled = true;
+
+}
+
+
+function iniciarTimer() {
+
+  pararTimer();
+
+  timer =
+    setInterval(
+      atualizarCronometro,
+      250
+    );
+
+}
+
+
+function pararTimer() {
+
+  if (timer) {
+
+    clearInterval(timer);
+
+    timer = null;
+
+  }
+
+}
+
+
+function atualizarCronometro() {
+
+  let total =
+    tempoAcumulado;
+
+
+  if (
+    recorder &&
+    recorder.state === 'recording'
+  ) {
+
+    total +=
+      performance.now() -
+      inicioTrecho;
+
+  }
+
+
+  const segundos =
+    Math.floor(total / 1000);
+
+
+  const h =
+    Math.floor(segundos / 3600);
+
+  const m =
+    Math.floor(
+      (segundos % 3600) / 60
+    );
+
+  const s =
+    segundos % 60;
+
+
+  document.getElementById(
+    'cronometro'
+  ).innerText =
+
+    String(h).padStart(2,'0') +
+    ':' +
+    String(m).padStart(2,'0') +
+    ':' +
+    String(s).padStart(2,'0');
+
+}
+
+</script>
+
+</body>
+</html>
