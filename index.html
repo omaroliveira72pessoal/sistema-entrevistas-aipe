@@ -327,7 +327,83 @@ NÃO
 </label>
 
 </div>
+<!-- TESTE PRÉVIO DO MICROFONE -->
 
+<div
+  id="testeMicrofone"
+  style="
+    margin-top:20px;
+    padding:16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:7px;
+  "
+>
+
+  <strong>Teste prévio do microfone</strong>
+
+  <p style="font-size:13px;">
+    Recomenda-se testar a qualidade da captação
+    antes de iniciar a entrevista.
+  </p>
+
+  <div
+    style="
+      height:14px;
+      background:#e2e8f0;
+      border-radius:7px;
+      overflow:hidden;
+      margin:12px 0;
+    "
+  >
+    <div
+      id="nivelMicrofone"
+      style="
+        width:0%;
+        height:100%;
+        background:#17365d;
+        transition:width .08s;
+      "
+    ></div>
+  </div>
+
+  <div
+    id="statusTeste"
+    style="
+      font-size:12px;
+      font-weight:bold;
+      margin-bottom:10px;
+    "
+  >
+    MICROFONE NÃO TESTADO
+  </div>
+
+  <button
+    type="button"
+    id="btnTesteMicrofone"
+    class="secundario"
+    onclick="iniciarTesteMicrofone()"
+  >
+    🎙 TESTAR MICROFONE
+  </button>
+
+  <button
+    type="button"
+    id="btnFinalizarTeste"
+    class="finalizar"
+    onclick="finalizarTesteMicrofone()"
+    disabled
+  >
+    ⏹ FINALIZAR TESTE
+  </button>
+
+  <audio
+    id="playerTeste"
+    controls
+    style="display:none;width:100%;margin-top:12px;"
+  ></audio>
+
+</div>
 <div class="acoes">
 <button class="primario" onclick="abrirEntrevista()">
 INICIAR ENTREVISTA
@@ -458,7 +534,15 @@ Nenhum marcador registrado.
 
 
 <script>
+// TESTE PRÉVIO DO MICROFONE
 
+let streamTeste = null;
+let recorderTeste = null;
+let partesTeste = [];
+
+let contextoAudioTeste = null;
+let analisadorTeste = null;
+let animacaoNivel = null;
 /* =========================================================
    ROTEIRO
 ========================================================= */
@@ -1404,7 +1488,288 @@ function registrarMarcadorFinal(){
   atualizarMarcadores();
 
 }
+/* =========================================================
+   TESTE PRÉVIO DO MICROFONE
+========================================================= */
 
+async function iniciarTesteMicrofone() {
+
+  try {
+
+    document.getElementById(
+      "statusTeste"
+    ).innerText =
+      "SOLICITANDO MICROFONE...";
+
+
+    streamTeste =
+      await navigator.mediaDevices
+      .getUserMedia({
+        audio: true
+      });
+
+
+    partesTeste = [];
+
+
+    recorderTeste =
+      new MediaRecorder(streamTeste);
+
+
+    recorderTeste.ondataavailable =
+      function(evento) {
+
+        if(evento.data.size > 0) {
+          partesTeste.push(evento.data);
+        }
+
+      };
+
+
+    recorderTeste.onstop =
+      function() {
+
+        const blob =
+          new Blob(
+            partesTeste,
+            {
+              type:
+                recorderTeste.mimeType ||
+                "audio/webm"
+            }
+          );
+
+
+        const url =
+          URL.createObjectURL(blob);
+
+
+        const player =
+          document.getElementById(
+            "playerTeste"
+          );
+
+
+        player.src = url;
+
+        player.style.display =
+          "block";
+
+
+        document.getElementById(
+          "statusTeste"
+        ).innerText =
+          "TESTE CONCLUÍDO — OUÇA A GRAVAÇÃO";
+
+      };
+
+
+    recorderTeste.start(500);
+
+
+    iniciarMedidorMicrofone(
+      streamTeste
+    );
+
+
+    document.getElementById(
+      "statusTeste"
+    ).innerText =
+      "● TESTE EM GRAVAÇÃO — FALE NORMALMENTE";
+
+
+    document.getElementById(
+      "btnTesteMicrofone"
+    ).disabled = true;
+
+
+    document.getElementById(
+      "btnFinalizarTeste"
+    ).disabled = false;
+
+  }
+
+  catch(erro) {
+
+    console.error(erro);
+
+
+    document.getElementById(
+      "statusTeste"
+    ).innerText =
+      "NÃO FOI POSSÍVEL ACESSAR O MICROFONE";
+
+
+    alert(
+      "Não foi possível acessar o microfone: " +
+      erro.name
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   MEDIDOR VISUAL
+========================================================= */
+
+function iniciarMedidorMicrofone(stream) {
+
+  contextoAudioTeste =
+    new (
+      window.AudioContext ||
+      window.webkitAudioContext
+    )();
+
+
+  const fonte =
+    contextoAudioTeste
+      .createMediaStreamSource(
+        stream
+      );
+
+
+  analisadorTeste =
+    contextoAudioTeste
+      .createAnalyser();
+
+
+  analisadorTeste.fftSize = 256;
+
+
+  fonte.connect(
+    analisadorTeste
+  );
+
+
+  const dados =
+    new Uint8Array(
+      analisadorTeste.frequencyBinCount
+    );
+
+
+  function atualizarNivel() {
+
+    analisadorTeste
+      .getByteFrequencyData(
+        dados
+      );
+
+
+    let soma = 0;
+
+
+    for(
+      let i = 0;
+      i < dados.length;
+      i++
+    ) {
+
+      soma += dados[i];
+
+    }
+
+
+    const media =
+      soma / dados.length;
+
+
+    /*
+     * Amplificação apenas visual.
+     * Não altera o áudio gravado.
+     */
+
+    const percentual =
+      Math.min(
+        100,
+        media * 2.5
+      );
+
+
+    document.getElementById(
+      "nivelMicrofone"
+    ).style.width =
+      percentual + "%";
+
+
+    animacaoNivel =
+      requestAnimationFrame(
+        atualizarNivel
+      );
+
+  }
+
+
+  atualizarNivel();
+
+}
+
+
+/* =========================================================
+   FINALIZAR TESTE
+========================================================= */
+
+function finalizarTesteMicrofone() {
+
+  if(
+    recorderTeste &&
+    recorderTeste.state !== "inactive"
+  ) {
+
+    recorderTeste.stop();
+
+  }
+
+
+  if(animacaoNivel) {
+
+    cancelAnimationFrame(
+      animacaoNivel
+    );
+
+    animacaoNivel = null;
+
+  }
+
+
+  document.getElementById(
+    "nivelMicrofone"
+  ).style.width = "0%";
+
+
+  if(streamTeste) {
+
+    streamTeste
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+    streamTeste = null;
+
+  }
+
+
+  if(contextoAudioTeste) {
+
+    contextoAudioTeste.close();
+
+    contextoAudioTeste = null;
+
+  }
+
+
+  document.getElementById(
+    "btnTesteMicrofone"
+  ).disabled = false;
+
+
+  document.getElementById(
+    "btnFinalizarTeste"
+  ).disabled = true;
+
+}
 </script>
 
 </body>
