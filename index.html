@@ -1,232 +1,1070 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Teste de Microfone - AIPe</title>
+<title>Sistema de Entrevistas – AIPe</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      color: #1f2937;
-    }
+<style>
+* {
+  box-sizing: border-box;
+}
 
-    .topo {
-      background: #17365d;
-      color: white;
-      padding: 24px;
-      text-align: center;
-    }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
+}
 
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-    }
+.topo {
+  background: #17365d;
+  color: white;
+  padding: 22px;
+  text-align: center;
+}
 
-    .card {
-      background: white;
-      padding: 28px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.10);
-    }
+.topo h1 {
+  margin: 0;
+  font-size: 24px;
+}
 
-    h2 {
-      color: #17365d;
-      margin-top: 0;
-    }
+.topo p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
 
-    #cronometro {
-      font-size: 38px;
-      font-weight: bold;
-      color: #17365d;
-      margin: 25px 0 8px;
-    }
+.container {
+  max-width: 1050px;
+  margin: 25px auto;
+  padding: 0 18px 40px;
+}
 
-    #status {
-      font-weight: bold;
-      margin-bottom: 25px;
-    }
+.card {
+  background: white;
+  padding: 24px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
 
-    button {
-      border: 0;
-      border-radius: 6px;
-      padding: 12px 17px;
-      margin: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+h2 {
+  color: #17365d;
+  margin-top: 0;
+}
 
-    #gravar, #continuar {
-      background: #17365d;
-      color: white;
-    }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
 
-    #pausar {
-      background: #b45309;
-      color: white;
-    }
+.campo {
+  display: flex;
+  flex-direction: column;
+}
 
-    #finalizar {
-      background: #991b1b;
-      color: white;
-    }
+label {
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
 
-    button:disabled {
-      opacity: .4;
-      cursor: not-allowed;
-    }
+input,
+select {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
 
-    audio {
-      width: 100%;
-      margin-top: 25px;
-    }
+.autorizacao {
+  margin-top: 20px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+}
 
-    #diagnostico {
-      margin-top: 20px;
-      padding: 12px;
-      background: #f8fafc;
-      border-radius: 6px;
-      font-size: 13px;
-    }
-  </style>
+.autorizacao input {
+  margin-right: 5px;
+}
+
+button {
+  border: none;
+  border-radius: 6px;
+  padding: 11px 17px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 3px;
+}
+
+.primario {
+  background: #17365d;
+  color: white;
+}
+
+.pausa {
+  background: #b45309;
+  color: white;
+}
+
+.finalizar {
+  background: #991b1b;
+  color: white;
+}
+
+.secundario {
+  background: #e2e8f0;
+  color: #1f2937;
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.acoes {
+  margin-top: 22px;
+  text-align: right;
+}
+
+#areaEntrevista {
+  display: none;
+}
+
+.infoEntrevista {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+#cronometro {
+  font-size: 32px;
+  font-weight: bold;
+  color: #17365d;
+  font-variant-numeric: tabular-nums;
+}
+
+#status {
+  font-size: 13px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.controles {
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.progresso {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.blocoTitulo {
+  color: #17365d;
+  font-size: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 18px;
+}
+
+.perguntaCentral {
+  font-size: 20px;
+  line-height: 1.45;
+  font-weight: bold;
+  margin-bottom: 22px;
+}
+
+.aprofundamentos {
+  background: #f8fafc;
+  border-left: 4px solid #94a3b8;
+  padding: 15px 18px;
+}
+
+.aprofundamentos strong {
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.aprofundamentos li {
+  margin: 9px 0;
+  line-height: 1.4;
+}
+
+.navegacao {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 22px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+
+#marcadores {
+  font-size: 13px;
+}
+
+.marcador {
+  padding: 7px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+audio {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.oculto {
+  display: none !important;
+}
+
+.aviso {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 15px;
+}
+
+@media(max-width:700px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .navegacao {
+    flex-direction: column;
+  }
+
+  .navegacao button {
+    width: 100%;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <div class="topo">
-  <h1>TESTE DE MICROFONE – AIPe</h1>
+  <h1>SISTEMA DE ENTREVISTAS – AIPe</h1>
+  <p>Roteiro de Entrevista Semiestruturada</p>
 </div>
 
 <div class="container">
 
-  <div class="card">
+<!-- CADASTRO -->
 
-    <h2>Teste de gravação</h2>
+<div class="card" id="cadastro">
 
-    <p>
-      Este teste não envia nem armazena o áudio.
-      A gravação permanece somente neste navegador.
-    </p>
+<h2>Nova entrevista</h2>
 
-    <div id="cronometro">00:00:00</div>
+<div class="grid">
 
-    <div id="status">
-      Aguardando início
-    </div>
+<div class="campo">
+<label>Função do participante</label>
+<select id="grupo">
+<option value="">Selecione...</option>
+<option value="PROFESSOR">Professor</option>
+<option value="DIRETOR">Diretor</option>
+<option value="TECNICO">Técnico</option>
+</select>
+</div>
 
-    <button id="gravar">
-      🎙 INICIAR
-    </button>
+<div class="campo oculto" id="campoTecnico">
+<label>Função técnica</label>
+<select id="funcaoTecnica">
+<option value="">Selecione...</option>
+<option value="ASSESSOR">Assessor</option>
+<option value="COORDENADOR">Coordenador</option>
+<option value="OUTRA">Outra função técnica</option>
+</select>
+</div>
 
-    <button id="pausar" disabled>
-      ⏸ PAUSAR
-    </button>
+<div class="campo">
+<label>Modalidade</label>
+<select id="modalidade">
+<option value="">Selecione...</option>
+<option value="PRESENCIAL">Presencial</option>
+<option value="REMOTA">Remota</option>
+</select>
+</div>
 
-    <button id="continuar" disabled>
-      ▶ CONTINUAR
-    </button>
+<div class="campo">
+<label>Coordenadoria Distrital/Regional</label>
+<input id="coordenadoria" placeholder="Ex.: CDE 02">
+</div>
 
-    <button id="finalizar" disabled>
-      ⏹ FINALIZAR
-    </button>
-
-    <audio
-      id="player"
-      controls
-      style="display:none;"
-    ></audio>
-
-    <div id="diagnostico">
-      Microfone ainda não testado.
-    </div>
-
-  </div>
+<div class="campo">
+<label>Código da escola</label>
+<input id="escola" placeholder="Código da unidade escolar">
+</div>
 
 </div>
 
+<div class="autorizacao">
+
+<strong>Gravação autorizada pelo participante?</strong><br><br>
+
+<label style="display:inline;font-weight:normal;">
+<input type="radio" name="autorizacao" value="SIM">
+SIM
+</label>
+
+&nbsp;&nbsp;
+
+<label style="display:inline;font-weight:normal;">
+<input type="radio" name="autorizacao" value="NAO">
+NÃO
+</label>
+
+</div>
+
+<div class="acoes">
+<button class="primario" onclick="abrirEntrevista()">
+INICIAR ENTREVISTA
+</button>
+</div>
+
+<div class="aviso">
+Nesta versão de teste, os dados e o áudio permanecem somente no navegador.
+</div>
+
+</div>
+
+
+<!-- ENTREVISTA -->
+
+<div id="areaEntrevista">
+
+<div class="card">
+
+<div class="infoEntrevista">
+
+<div>
+<strong id="identificacaoFuncao"></strong><br>
+<span id="identificacaoLocal"></span>
+</div>
+
+<div>
+<div id="cronometro">00:00:00</div>
+<div id="status">GRAVAÇÃO NÃO INICIADA</div>
+</div>
+
+</div>
+
+<div class="controles">
+
+<button
+id="btnGravar"
+class="primario"
+onclick="iniciarGravacao()">
+🎙 INICIAR GRAVAÇÃO
+</button>
+
+<button
+id="btnPausar"
+class="pausa"
+onclick="pausarGravacao()"
+disabled>
+⏸ PAUSAR
+</button>
+
+<button
+id="btnContinuar"
+class="primario"
+onclick="continuarGravacao()"
+disabled>
+▶ CONTINUAR
+</button>
+
+<button
+id="btnFinalizar"
+class="finalizar"
+onclick="finalizarGravacao()"
+disabled>
+⏹ FINALIZAR
+</button>
+
+<audio id="player" controls style="display:none;"></audio>
+
+</div>
+
+</div>
+
+
+<!-- ROTEIRO -->
+
+<div class="card">
+
+<div id="progresso" class="progresso"></div>
+
+<div id="blocoTitulo" class="blocoTitulo"></div>
+
+<div id="perguntaCentral" class="perguntaCentral"></div>
+
+<div id="areaAprofundamentos" class="aprofundamentos">
+
+<strong>Possíveis aprofundamentos</strong>
+
+<ul id="listaAprofundamentos"></ul>
+
+</div>
+
+<div class="navegacao">
+
+<button
+id="btnAnterior"
+class="secundario"
+onclick="anterior()">
+← BLOCO ANTERIOR
+</button>
+
+<button
+id="btnProximo"
+class="primario"
+onclick="proximo()">
+PRÓXIMO BLOCO →
+</button>
+
+</div>
+
+</div>
+
+
+<!-- MARCADORES -->
+
+<div class="card">
+
+<h2>Marcadores da entrevista</h2>
+
+<div id="marcadores">
+Nenhum marcador registrado.
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
 <script>
+
+/* =========================================================
+   ROTEIRO
+========================================================= */
+
+const blocosBase = [
+
+{
+ordem:2,
+titulo:"CARACTERIZAÇÃO DA ATUAÇÃO PROFISSIONAL",
+central:"Poderia descrever brevemente suas principais atribuições e como elas se relacionam com o trabalho pedagógico da escola?",
+comuns:[]
+},
+
+{
+ordem:3,
+titulo:"GESTÃO E ACOMPANHAMENTO DAS AÇÕES PEDAGÓGICAS",
+central:"Como são definidas e acompanhadas as ações pedagógicas nas escolas, considerando sua experiência e função profissional?",
+comuns:[
+"Como são definidas as ações pedagógicas previstas no Plano de Gestão da escola?",
+"Quem participa efetivamente dessa definição?",
+"Como ocorre a participação da escola e das instâncias externas nesse processo?",
+"Como você percebe a autonomia da escola na elaboração do Plano?",
+"Em que medida as ações previstas no Plano correspondem às necessidades identificadas pela própria escola?",
+"Como o Plano de Gestão é utilizado pela escola depois de sua elaboração e validação?",
+"De que maneira ele participa das decisões e do trabalho pedagógico cotidiano?"
+],
+diretor:[
+"Como ocorre a participação do assessor na elaboração e no acompanhamento do Plano de Gestão?",
+"Que tipo de orientação a escola recebe durante sua elaboração?",
+"Quando há divergência entre a compreensão da escola e as orientações recebidas, como isso é resolvido?",
+"Depois da validação do Plano, como a escola acompanha as ações que foram definidas?"
+],
+assessor:[
+"Como você compreende sua função no processo de elaboração e acompanhamento do Plano de Gestão?",
+"Como ocorre sua participação na definição das ações propostas pela escola?",
+"Quando identifica fragilidades em uma ação proposta pela escola, como costuma proceder?",
+"Como você define o limite entre orientar a escola na elaboração das ações e preservar a autoria da própria escola sobre o Plano de Gestão?",
+"Como concilia o acompanhamento do Plano com as demais demandas do sistema que precisam ser orientadas ou acompanhadas junto às escolas?"
+],
+coordenador:[
+"O que é considerado no processo de análise e validação de um Plano de Gestão?",
+"Como são analisadas a coerência entre problemas, causas e ações e a adequação dos prazos?",
+"Quando são identificadas fragilidades no Plano, como ocorre a devolutiva à escola e ao assessor?",
+"Como você compreende as responsabilidades da escola, do assessor e da coordenação na qualidade final do Plano?",
+"Depois da validação, de que forma a execução do Plano é acompanhada?"
+]
+},
+
+{
+ordem:4,
+titulo:"CONCEPÇÕES SOBRE AVALIAÇÃO DA APRENDIZAGEM",
+central:"Na sua experiência, o que significa avaliar a aprendizagem dos estudantes?",
+comuns:[
+"Como essa avaliação costuma acontecer no dia a dia da escola?",
+"Que informações essas avaliações fornecem sobre a aprendizagem dos estudantes?",
+"O que normalmente é feito com as informações obtidas por meio dessas avaliações?",
+"Que papel as provas e as notas costumam ter nesse processo?",
+"Existem outras formas utilizadas pela escola ou pelos professores para acompanhar a aprendizagem? Quais?"
+]
+},
+
+{
+ordem:5,
+titulo:"PROCESSOS AVALIATIVOS EXTERNOS",
+central:"Como os resultados das avaliações externas (SAEB ou SADEAM) chegam à escola e são utilizados no trabalho pedagógico?",
+comuns:[
+"Como esses resultados são analisados pela escola?",
+"Quem costuma participar dessa análise?",
+"Que decisões ou ações são tomadas a partir desses resultados?",
+"Quais os maiores desafios para relacionar os resultados dessas avaliações ao que os estudantes demonstram no cotidiano escolar?",
+"O que esses índices permitem compreender sobre a aprendizagem dos estudantes?",
+"Há aspectos da aprendizagem que, na sua percepção, esses índices não conseguem captar? Quais?"
+]
+},
+
+{
+ordem:6,
+titulo:"PRÁTICAS DE REFLEXÃO SOBRE O TRABALHO ESCOLAR",
+central:"A escola costuma analisar coletivamente e de forma reflexiva suas práticas, dificuldades e resultados?",
+comuns:[
+"Como esses momentos acontecem?",
+"Quem participa?",
+"O que costuma ser analisado?",
+"O que geralmente provoca ou motiva esses momentos de reflexão?",
+"Essas análises resultam em decisões ou mudanças nas práticas pedagógicas? De que forma?",
+"Como as decisões tomadas nesses momentos são posteriormente acompanhadas?",
+"Na sua percepção, por que esse tipo de reflexão não ocorre ou ocorre apenas em situações específicas?",
+"O que seria necessário para que esses momentos acontecessem com maior regularidade?"
+]
+},
+
+{
+ordem:7,
+titulo:"A ESCOLA DIANTE DA AVALIAÇÃO DO PRÓPRIO TRABALHO",
+central:"De que forma a escola poderia avaliar seu próprio trabalho para contribuir com a melhoria da aprendizagem dos estudantes?",
+comuns:[
+"Que aspectos do trabalho da escola deveriam ser considerados nessa avaliação?",
+"Quem deveria participar desse processo?",
+"Como professores, gestores, estudantes e famílias poderiam participar?",
+"De onde deveriam partir os critérios utilizados para essa avaliação?",
+"O que deveria ser feito com os resultados dessa avaliação?",
+"Quais condições seriam necessárias para que esse processo acontecesse de forma efetiva?",
+"Que dificuldades poderiam limitar sua realização?"
+]
+},
+
+{
+ordem:8,
+titulo:"ARTICULAÇÃO ENTRE CURRÍCULO E AVALIAÇÕES EXTERNAS",
+central:"Você percebe relação entre o que é trabalhado no currículo e o que é avaliado nas avaliações externas?",
+comuns:[
+"Como você percebe essa relação?",
+"Essa relação interfere de alguma maneira no planejamento ou nas práticas pedagógicas da escola? Como?",
+"Há situações em que aquilo que é priorizado no trabalho pedagógico da escola difere do que recebe maior atenção nas avaliações externas? Poderia dar algum exemplo?",
+"Como a escola lida com essas situações?"
+]
+},
+
+{
+ordem:9,
+titulo:"REFLEXÃO FINAL SOBRE QUALIDADE DA ESCOLA",
+central:"O que, na sua visão, define hoje uma “escola de qualidade” para esta comunidade específica?",
+comuns:[
+"Quais aspectos deveriam ser considerados para dizer que uma escola oferece uma educação de qualidade?",
+"Existe algum momento ou espaço em que professores, gestores, estudantes e famílias discutem o que consideram importante para a escola?",
+"Se a escola pudesse definir indicadores próprios para avaliar a qualidade de seu trabalho, quais seriam eles?",
+"Como você percebe a autonomia da escola para definir seus rumos pedagógicos diante das orientações e metas estabelecidas pelo sistema de ensino?",
+"Como os resultados das avaliações externas entram na sua compreensão sobre a qualidade da escola?"
+]
+},
+
+{
+ordem:10,
+titulo:"ENCERRAMENTO",
+central:"Gostaria de acrescentar alguma consideração que não foi abordada durante a entrevista?",
+comuns:[]
+}
+
+];
+
+
+/* =========================================================
+   VARIÁVEIS
+========================================================= */
+
+let grupoAtual = "";
+let funcaoTecnicaAtual = "";
+
+let roteiroAtual = [];
+let indiceAtual = 0;
 
 let recorder = null;
 let stream = null;
-let partes = [];
+let partesAudio = [];
 
 let tempoAcumulado = 0;
 let inicioTrecho = null;
 let timer = null;
 
-
-const btnGravar =
-  document.getElementById('gravar');
-
-const btnPausar =
-  document.getElementById('pausar');
-
-const btnContinuar =
-  document.getElementById('continuar');
-
-const btnFinalizar =
-  document.getElementById('finalizar');
+let marcadores = [];
 
 
-btnGravar.onclick = iniciar;
-btnPausar.onclick = pausar;
-btnContinuar.onclick = continuar;
-btnFinalizar.onclick = finalizar;
+/* =========================================================
+   CADASTRO
+========================================================= */
+
+document
+.getElementById("grupo")
+.addEventListener("change", function(){
+
+  if(this.value === "TECNICO"){
+    document
+    .getElementById("campoTecnico")
+    .classList.remove("oculto");
+  } else {
+    document
+    .getElementById("campoTecnico")
+    .classList.add("oculto");
+
+    document
+    .getElementById("funcaoTecnica")
+    .value = "";
+  }
+
+});
 
 
-async function iniciar() {
+function abrirEntrevista(){
+
+  const grupo =
+    document.getElementById("grupo").value;
+
+  const funcaoTecnica =
+    document.getElementById("funcaoTecnica").value;
+
+  const modalidade =
+    document.getElementById("modalidade").value;
+
+  const coordenadoria =
+    document.getElementById("coordenadoria").value.trim();
+
+  const escola =
+    document.getElementById("escola").value.trim();
+
+  const autorizacao =
+    document.querySelector(
+      'input[name="autorizacao"]:checked'
+    );
+
+
+  if(!grupo){
+    alert("Selecione a função do participante.");
+    return;
+  }
+
+
+  if(
+    grupo === "TECNICO" &&
+    !funcaoTecnica
+  ){
+    alert("Selecione a função técnica.");
+    return;
+  }
+
+
+  if(!modalidade){
+    alert("Selecione a modalidade.");
+    return;
+  }
+
+
+  if(!autorizacao){
+    alert("Informe se a gravação foi autorizada.");
+    return;
+  }
+
+
+  grupoAtual = grupo;
+  funcaoTecnicaAtual = funcaoTecnica;
+
+
+  montarRoteiro();
+
+
+  document
+  .getElementById("cadastro")
+  .style.display = "none";
+
+
+  document
+  .getElementById("areaEntrevista")
+  .style.display = "block";
+
+
+  let descricao = grupo;
+
+  if(grupo === "TECNICO"){
+    descricao += " — " + funcaoTecnica;
+  }
+
+
+  document
+  .getElementById("identificacaoFuncao")
+  .innerText = descricao;
+
+
+  document
+  .getElementById("identificacaoLocal")
+  .innerText =
+    coordenadoria +
+    (escola ? " | Escola: " + escola : "") +
+    " | " +
+    modalidade;
+
+
+  if(autorizacao.value !== "SIM"){
+
+    document
+    .getElementById("btnGravar")
+    .disabled = true;
+
+    document
+    .getElementById("status")
+    .innerText = "GRAVAÇÃO NÃO AUTORIZADA";
+
+  }
+
+
+  indiceAtual = 0;
+
+  mostrarBloco();
+
+}
+
+
+/* =========================================================
+   MONTA O ROTEIRO CONFORME PARTICIPANTE
+========================================================= */
+
+function montarRoteiro(){
+
+  roteiroAtual =
+    blocosBase.map(function(bloco){
+
+      let aprofundamentos =
+        [...(bloco.comuns || [])];
+
+
+      if(
+        grupoAtual === "DIRETOR" &&
+        bloco.diretor
+      ){
+        aprofundamentos.push(
+          ...bloco.diretor
+        );
+      }
+
+
+      if(
+        grupoAtual === "TECNICO" &&
+        funcaoTecnicaAtual === "ASSESSOR" &&
+        bloco.assessor
+      ){
+        aprofundamentos.push(
+          ...bloco.assessor
+        );
+      }
+
+
+      if(
+        grupoAtual === "TECNICO" &&
+        funcaoTecnicaAtual === "COORDENADOR" &&
+        bloco.coordenador
+      ){
+        aprofundamentos.push(
+          ...bloco.coordenador
+        );
+      }
+
+
+      return {
+        ordem: bloco.ordem,
+        titulo: bloco.titulo,
+        central: bloco.central,
+        aprofundamentos: aprofundamentos
+      };
+
+    });
+
+}
+
+
+/* =========================================================
+   EXIBIR BLOCO
+========================================================= */
+
+function mostrarBloco(){
+
+  const bloco =
+    roteiroAtual[indiceAtual];
+
+
+  document
+  .getElementById("progresso")
+  .innerText =
+    "Bloco " +
+    (indiceAtual + 1) +
+    " de " +
+    roteiroAtual.length;
+
+
+  document
+  .getElementById("blocoTitulo")
+  .innerText =
+    bloco.ordem +
+    ". " +
+    bloco.titulo;
+
+
+  document
+  .getElementById("perguntaCentral")
+  .innerText =
+    bloco.central;
+
+
+  const lista =
+    document.getElementById(
+      "listaAprofundamentos"
+    );
+
+
+  lista.innerHTML = "";
+
+
+  bloco.aprofundamentos
+  .forEach(function(texto){
+
+    const li =
+      document.createElement("li");
+
+    li.innerText = texto;
+
+    lista.appendChild(li);
+
+  });
+
+
+  document
+  .getElementById(
+    "areaAprofundamentos"
+  )
+  .style.display =
+    bloco.aprofundamentos.length
+    ? "block"
+    : "none";
+
+
+  document
+  .getElementById("btnAnterior")
+  .disabled =
+    indiceAtual === 0;
+
+
+  const btnProximo =
+    document.getElementById(
+      "btnProximo"
+    );
+
+
+  if(
+    indiceAtual ===
+    roteiroAtual.length - 1
+  ){
+
+    btnProximo.disabled = true;
+    btnProximo.innerText =
+      "FIM DO ROTEIRO";
+
+  } else {
+
+    btnProximo.disabled = false;
+    btnProximo.innerText =
+      "PRÓXIMO BLOCO →";
+
+  }
+
+}
+
+
+/* =========================================================
+   NAVEGAÇÃO + MARCADOR AUTOMÁTICO
+========================================================= */
+
+function proximo(){
+
+  if(
+    indiceAtual >=
+    roteiroAtual.length - 1
+  ){
+    return;
+  }
+
+
+  indiceAtual++;
+
+  mostrarBloco();
+
+  registrarMarcador();
+
+}
+
+
+function anterior(){
+
+  if(indiceAtual <= 0){
+    return;
+  }
+
+  indiceAtual--;
+
+  mostrarBloco();
+
+}
+
+
+/* =========================================================
+   MARCADORES
+========================================================= */
+
+function registrarMarcador(){
+
+  if(
+    !recorder ||
+    (
+      recorder.state !== "recording" &&
+      recorder.state !== "paused"
+    )
+  ){
+    return;
+  }
+
+
+  const bloco =
+    roteiroAtual[indiceAtual];
+
+
+  marcadores.push({
+
+    tempo: obterTempoAtual(),
+
+    bloco: bloco.ordem,
+
+    titulo: bloco.titulo
+
+  });
+
+
+  atualizarMarcadores();
+
+}
+
+
+function atualizarMarcadores(){
+
+  const area =
+    document.getElementById(
+      "marcadores"
+    );
+
+
+  if(!marcadores.length){
+
+    area.innerText =
+      "Nenhum marcador registrado.";
+
+    return;
+
+  }
+
+
+  area.innerHTML = "";
+
+
+  marcadores.forEach(function(m){
+
+    const div =
+      document.createElement("div");
+
+    div.className = "marcador";
+
+    div.innerText =
+      m.tempo +
+      " — Bloco " +
+      m.bloco +
+      " — " +
+      m.titulo;
+
+    area.appendChild(div);
+
+  });
+
+}
+
+
+/* =========================================================
+   GRAVAÇÃO
+========================================================= */
+
+async function iniciarGravacao(){
 
   try {
 
-    document.getElementById(
-      'diagnostico'
-    ).innerText =
-      'Solicitando acesso ao microfone...';
-
-
     stream =
       await navigator.mediaDevices
-        .getUserMedia({
-          audio: true
-        });
+      .getUserMedia({
+        audio:true
+      });
 
 
-    document.getElementById(
-      'diagnostico'
-    ).innerText =
-      'MICROFONE AUTORIZADO E ACESSÍVEL.';
+    partesAudio = [];
 
-
-    partes = [];
 
     recorder =
       new MediaRecorder(stream);
 
 
     recorder.ondataavailable =
-      function(evento) {
+      function(evento){
 
-        if (evento.data.size > 0) {
-          partes.push(evento.data);
+        if(evento.data.size > 0){
+          partesAudio.push(evento.data);
         }
 
       };
 
 
     recorder.onstop =
-      function() {
+      function(){
 
         const blob =
           new Blob(
-            partes,
+            partesAudio,
             {
               type:
                 recorder.mimeType ||
-                'audio/webm'
+                "audio/webm"
             }
           );
 
@@ -237,25 +1075,28 @@ async function iniciar() {
 
         const player =
           document.getElementById(
-            'player'
+            "player"
           );
 
 
         player.src = url;
-        player.style.display = 'block';
+
+        player.style.display =
+          "block";
 
 
         stream
-          .getTracks()
-          .forEach(
-            track => track.stop()
-          );
+        .getTracks()
+        .forEach(track => track.stop());
 
 
-        document.getElementById(
-          'status'
-        ).innerText =
-          'GRAVAÇÃO FINALIZADA — OUÇA ABAIXO';
+        document
+        .getElementById("status")
+        .innerText =
+          "GRAVAÇÃO FINALIZADA";
+
+
+        registrarMarcadorFinal();
 
       };
 
@@ -268,39 +1109,47 @@ async function iniciar() {
     inicioTrecho =
       performance.now();
 
-
     iniciarTimer();
 
 
-    document.getElementById(
-      'status'
-    ).innerText =
-      '● GRAVANDO';
+    document
+    .getElementById("status")
+    .innerText =
+      "● GRAVANDO";
 
 
-    btnGravar.disabled = true;
-    btnPausar.disabled = false;
-    btnContinuar.disabled = true;
-    btnFinalizar.disabled = false;
+    document
+    .getElementById("btnGravar")
+    .disabled = true;
+
+
+    document
+    .getElementById("btnPausar")
+    .disabled = false;
+
+
+    document
+    .getElementById("btnContinuar")
+    .disabled = true;
+
+
+    document
+    .getElementById("btnFinalizar")
+    .disabled = false;
+
+
+    /* marcador do bloco inicial */
+
+    registrarMarcador();
 
   }
 
-  catch (erro) {
+  catch(erro){
 
     console.error(erro);
 
-
-    document.getElementById(
-      'diagnostico'
-    ).innerText =
-      'ERRO: ' +
-      erro.name +
-      ' — ' +
-      erro.message;
-
-
     alert(
-      'Não foi possível acessar o microfone: ' +
+      "Não foi possível acessar o microfone: " +
       erro.name
     );
 
@@ -309,12 +1158,14 @@ async function iniciar() {
 }
 
 
-function pausar() {
+function pausarGravacao(){
 
-  if (
+  if(
     !recorder ||
-    recorder.state !== 'recording'
-  ) return;
+    recorder.state !== "recording"
+  ){
+    return;
+  }
 
 
   tempoAcumulado +=
@@ -327,24 +1178,32 @@ function pausar() {
   pararTimer();
 
 
-  document.getElementById(
-    'status'
-  ).innerText =
-    'GRAVAÇÃO PAUSADA';
+  document
+  .getElementById("status")
+  .innerText =
+    "GRAVAÇÃO PAUSADA";
 
 
-  btnPausar.disabled = true;
-  btnContinuar.disabled = false;
+  document
+  .getElementById("btnPausar")
+  .disabled = true;
+
+
+  document
+  .getElementById("btnContinuar")
+  .disabled = false;
 
 }
 
 
-function continuar() {
+function continuarGravacao(){
 
-  if (
+  if(
     !recorder ||
-    recorder.state !== 'paused'
-  ) return;
+    recorder.state !== "paused"
+  ){
+    return;
+  }
 
 
   recorder.resume();
@@ -357,26 +1216,34 @@ function continuar() {
   iniciarTimer();
 
 
-  document.getElementById(
-    'status'
-  ).innerText =
-    '● GRAVANDO';
+  document
+  .getElementById("status")
+  .innerText =
+    "● GRAVANDO";
 
 
-  btnPausar.disabled = false;
-  btnContinuar.disabled = true;
+  document
+  .getElementById("btnPausar")
+  .disabled = false;
+
+
+  document
+  .getElementById("btnContinuar")
+  .disabled = true;
 
 }
 
 
-function finalizar() {
+function finalizarGravacao(){
 
-  if (!recorder) return;
+  if(!recorder){
+    return;
+  }
 
 
-  if (
-    recorder.state === 'recording'
-  ) {
+  if(
+    recorder.state === "recording"
+  ){
 
     tempoAcumulado +=
       performance.now() -
@@ -390,23 +1257,35 @@ function finalizar() {
   atualizarCronometro();
 
 
-  if (
-    recorder.state !== 'inactive'
-  ) {
-
+  if(
+    recorder.state !== "inactive"
+  ){
     recorder.stop();
-
   }
 
 
-  btnPausar.disabled = true;
-  btnContinuar.disabled = true;
-  btnFinalizar.disabled = true;
+  document
+  .getElementById("btnPausar")
+  .disabled = true;
+
+
+  document
+  .getElementById("btnContinuar")
+  .disabled = true;
+
+
+  document
+  .getElementById("btnFinalizar")
+  .disabled = true;
 
 }
 
 
-function iniciarTimer() {
+/* =========================================================
+   CRONÔMETRO
+========================================================= */
+
+function iniciarTimer(){
 
   pararTimer();
 
@@ -419,9 +1298,9 @@ function iniciarTimer() {
 }
 
 
-function pararTimer() {
+function pararTimer(){
 
-  if (timer) {
+  if(timer){
 
     clearInterval(timer);
 
@@ -432,16 +1311,16 @@ function pararTimer() {
 }
 
 
-function atualizarCronometro() {
+function obterTempoMs(){
 
   let total =
     tempoAcumulado;
 
 
-  if (
+  if(
     recorder &&
-    recorder.state === 'recording'
-  ) {
+    recorder.state === "recording"
+  ){
 
     total +=
       performance.now() -
@@ -450,31 +1329,79 @@ function atualizarCronometro() {
   }
 
 
-  const segundos =
-    Math.floor(total / 1000);
+  return total;
+
+}
 
 
-  const h =
-    Math.floor(segundos / 3600);
+function atualizarCronometro(){
 
-  const m =
-    Math.floor(
-      (segundos % 3600) / 60
+  document
+  .getElementById("cronometro")
+  .innerText =
+    formatarTempo(
+      obterTempoMs()
     );
 
-  const s =
-    segundos % 60;
+}
 
 
-  document.getElementById(
-    'cronometro'
-  ).innerText =
+function obterTempoAtual(){
 
-    String(h).padStart(2,'0') +
-    ':' +
-    String(m).padStart(2,'0') +
-    ':' +
-    String(s).padStart(2,'0');
+  return formatarTempo(
+    obterTempoMs()
+  );
+
+}
+
+
+function formatarTempo(ms){
+
+  const totalSegundos =
+    Math.floor(ms / 1000);
+
+
+  const horas =
+    Math.floor(
+      totalSegundos / 3600
+    );
+
+
+  const minutos =
+    Math.floor(
+      (totalSegundos % 3600) / 60
+    );
+
+
+  const segundos =
+    totalSegundos % 60;
+
+
+  return (
+    String(horas).padStart(2,"0") +
+    ":" +
+    String(minutos).padStart(2,"0") +
+    ":" +
+    String(segundos).padStart(2,"0")
+  );
+
+}
+
+
+function registrarMarcadorFinal(){
+
+  marcadores.push({
+
+    tempo: obterTempoAtual(),
+
+    bloco: "FIM",
+
+    titulo: "Final da entrevista"
+
+  });
+
+
+  atualizarMarcadores();
 
 }
 
