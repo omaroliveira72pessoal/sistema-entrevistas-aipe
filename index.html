@@ -732,7 +732,7 @@ document
 });
 
 
-function abrirEntrevista(){
+async function abrirEntrevista(){
 
   const grupo =
     document.getElementById("grupo").value;
@@ -755,11 +755,12 @@ function abrirEntrevista(){
     );
 
 
+  // VALIDAÇÕES
+
   if(!grupo){
     alert("Selecione a função do participante.");
     return;
   }
-
 
   if(
     grupo === "TECNICO" &&
@@ -769,76 +770,265 @@ function abrirEntrevista(){
     return;
   }
 
-
   if(!modalidade){
     alert("Selecione a modalidade.");
     return;
   }
 
-
   if(!autorizacao){
-    alert("Informe se a gravação foi autorizada.");
+    alert(
+      "Informe se a gravação foi autorizada."
+    );
     return;
   }
 
 
-  grupoAtual = grupo;
-  funcaoTecnicaAtual = funcaoTecnica;
+  // DADOS QUE SERÃO ENVIADOS AO APPS SCRIPT
+
+  const dados = {
+
+    grupo: grupo,
+
+    funcaoEspecifica:
+      funcaoTecnica,
+
+    modalidade:
+      modalidade,
+
+    coordenadoria:
+      coordenadoria,
+
+    codEscola:
+      escola,
+
+    gravacaoAutorizada:
+      autorizacao.value === "SIM"
+        ? "SIM"
+        : "NÃO"
+
+  };
 
 
-  montarRoteiro();
+  try {
+
+    // BLOQUEIA O BOTÃO DURANTE O REGISTRO
+
+    const botao =
+      document.querySelector(
+        '.acoes .primario'
+      );
+
+    if(botao){
+
+      botao.disabled = true;
+
+      botao.innerText =
+        "REGISTRANDO ENTREVISTA...";
+
+    }
 
 
-  document
-  .getElementById("cadastro")
-  .style.display = "none";
+    // ENVIA OS DADOS PARA O APPS SCRIPT
+
+    const resposta =
+      await fetch(
+        URL_BACKEND,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "text/plain;charset=utf-8"
+          },
+
+          body: JSON.stringify({
+
+            acao:
+              "iniciarEntrevista",
+
+            dados:
+              dados
+
+          })
+
+        }
+      );
 
 
-  document
-  .getElementById("areaEntrevista")
-  .style.display = "block";
+    if(!resposta.ok){
+
+      throw new Error(
+        "Falha de comunicação com o servidor."
+      );
+
+    }
 
 
-  let descricao = grupo;
+    // RECEBE A RESPOSTA DO APPS SCRIPT
 
-  if(grupo === "TECNICO"){
-    descricao += " — " + funcaoTecnica;
-  }
-
-
-  document
-  .getElementById("identificacaoFuncao")
-  .innerText = descricao;
+    const retorno =
+      await resposta.json();
 
 
-  document
-  .getElementById("identificacaoLocal")
-  .innerText =
-    coordenadoria +
-    (escola ? " | Escola: " + escola : "") +
-    " | " +
-    modalidade;
+    if(!retorno.sucesso){
+
+      throw new Error(
+        retorno.erro ||
+        "Não foi possível registrar a entrevista."
+      );
+
+    }
 
 
-  if(autorizacao.value !== "SIM"){
+    const registro =
+      retorno.dados;
+
+
+    // SOMENTE AGORA ABRE O ROTEIRO
+
+    grupoAtual =
+      grupo;
+
+    funcaoTecnicaAtual =
+      funcaoTecnica;
+
+
+    montarRoteiro();
+
 
     document
-    .getElementById("btnGravar")
-    .disabled = true;
+      .getElementById("cadastro")
+      .style.display =
+        "none";
+
 
     document
-    .getElementById("status")
-    .innerText = "GRAVAÇÃO NÃO AUTORIZADA";
+      .getElementById("areaEntrevista")
+      .style.display =
+        "block";
+
+
+    // IDENTIFICAÇÃO GERADA PELO APPS SCRIPT
+
+    let identificacao =
+      registro.codigoParticipante ||
+      "";
+
+
+    if(registro.idEntrevista){
+
+      identificacao +=
+        " | " +
+        registro.idEntrevista;
+
+    }
+
+
+    document
+      .getElementById(
+        "identificacaoFuncao"
+      )
+      .innerText =
+        identificacao;
+
+
+    // DADOS COMPLEMENTARES
+
+    let descricao =
+      grupo;
+
+
+    if(grupo === "TECNICO"){
+
+      descricao +=
+        " — " +
+        funcaoTecnica;
+
+    }
+
+
+    document
+      .getElementById(
+        "identificacaoLocal"
+      )
+      .innerText =
+
+        descricao +
+        " | " +
+        coordenadoria +
+
+        (
+          escola
+            ? " | Escola: " + escola
+            : ""
+        ) +
+
+        " | " +
+        modalidade;
+
+
+    // CONTROLE DA AUTORIZAÇÃO DA GRAVAÇÃO
+
+    if(
+      autorizacao.value !== "SIM"
+    ){
+
+      document
+        .getElementById(
+          "btnGravar"
+        )
+        .disabled =
+          true;
+
+
+      document
+        .getElementById(
+          "status"
+        )
+        .innerText =
+          "GRAVAÇÃO NÃO AUTORIZADA";
+
+    }
+
+
+    indiceAtual = 0;
+
+    mostrarBloco();
 
   }
 
+  catch(erro){
 
-  indiceAtual = 0;
+    console.error(erro);
 
-  mostrarBloco();
+
+    alert(
+      "Não foi possível iniciar a entrevista.\n\n" +
+      erro.message
+    );
+
+
+    // REABILITA O BOTÃO EM CASO DE ERRO
+
+    const botao =
+      document.querySelector(
+        '.acoes .primario'
+      );
+
+
+    if(botao){
+
+      botao.disabled =
+        false;
+
+      botao.innerText =
+        "INICIAR ENTREVISTA";
+
+    }
+
+  }
 
 }
-
 
 /* =========================================================
    MONTA O ROTEIRO CONFORME PARTICIPANTE
