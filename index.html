@@ -406,6 +406,12 @@ NÃO
 </div>
 <div class="acoes">
 <button class="primario" onclick="abrirEntrevista()">
+  <button
+  type="button"
+  class="secundario"
+  onclick="testarBackend()">
+  TESTAR CONEXÃO
+</button>
 INICIAR ENTREVISTA
 </button>
 </div>
@@ -1960,6 +1966,31 @@ function finalizarTesteMicrofone() {
   document.getElementById(
     "btnFinalizarTeste"
   ).disabled = true;
+
+}
+  async function testarBackend() {
+
+  try {
+
+    const resposta = await fetch(
+      URL_BACKEND + "?acao=teste"
+    );
+
+    const dados = await resposta.json();
+
+    alert(
+      "BACKEND RESPONDEU:\n\n" +
+      dados.mensagem
+    );
+
+  } catch (erro) {
+
+    alert(
+      "ERRO DE COMUNICAÇÃO:\n\n" +
+      erro.message
+    );
+
+  }
 
 }
 </script>
