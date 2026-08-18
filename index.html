@@ -738,7 +738,7 @@ document
 });
 
 
-async function abrirEntrevista(){
+async function abrirEntrevista() {
 
   const grupo =
     document.getElementById("grupo").value;
@@ -761,27 +761,29 @@ async function abrirEntrevista(){
     );
 
 
+  // =====================================================
   // VALIDAÇÕES
+  // =====================================================
 
-  if(!grupo){
+  if (!grupo) {
     alert("Selecione a função do participante.");
     return;
   }
 
-  if(
+  if (
     grupo === "TECNICO" &&
     !funcaoTecnica
-  ){
+  ) {
     alert("Selecione a função técnica.");
     return;
   }
 
-  if(!modalidade){
+  if (!modalidade) {
     alert("Selecione a modalidade.");
     return;
   }
 
-  if(!autorizacao){
+  if (!autorizacao) {
     alert(
       "Informe se a gravação foi autorizada."
     );
@@ -789,7 +791,9 @@ async function abrirEntrevista(){
   }
 
 
-  // DADOS QUE SERÃO ENVIADOS AO APPS SCRIPT
+  // =====================================================
+  // DADOS DA ENTREVISTA
+  // =====================================================
 
   const dados = {
 
@@ -815,16 +819,19 @@ async function abrirEntrevista(){
   };
 
 
+  const botao =
+    document.querySelector(
+      '.acoes .primario'
+    );
+
+
   try {
 
-    // BLOQUEIA O BOTÃO DURANTE O REGISTRO
+    // ===================================================
+    // BLOQUEIA O BOTÃO
+    // ===================================================
 
-    const botao =
-      document.querySelector(
-        '.acoes .primario'
-      );
-
-    if(botao){
+    if (botao) {
 
       botao.disabled = true;
 
@@ -834,63 +841,40 @@ async function abrirEntrevista(){
     }
 
 
-    // ENVIA OS DADOS PARA O APPS SCRIPT
+    // ===================================================
+    // ENVIA PARA O APPS SCRIPT
+    // ===================================================
 
-    const resposta =
-      await fetch(
-        URL_BACKEND,
-        {
-          method: "POST",
-redirect: "follow",
-          headers: {
-            "Content-Type":
-              "text/plain;charset=utf-8"
-          },
+    await fetch(
+      URL_BACKEND,
+      {
 
-          body: JSON.stringify({
+        method: "POST",
 
-            acao:
-              "iniciarEntrevista",
+        mode: "no-cors",
 
-            dados:
-              dados
+        headers: {
+          "Content-Type":
+            "text/plain;charset=utf-8"
+        },
 
-          })
+        body: JSON.stringify({
 
-        }
-      );
+          acao:
+            "iniciarEntrevista",
 
+          dados:
+            dados
 
-    if(!resposta.ok){
+        })
 
-      throw new Error(
-        "Falha de comunicação com o servidor."
-      );
-
-    }
+      }
+    );
 
 
-    // RECEBE A RESPOSTA DO APPS SCRIPT
-
-    const retorno =
-      await resposta.json();
-
-
-    if(!retorno.sucesso){
-
-      throw new Error(
-        retorno.erro ||
-        "Não foi possível registrar a entrevista."
-      );
-
-    }
-
-
-    const registro =
-      retorno.dados;
-
-
-    // SOMENTE AGORA ABRE O ROTEIRO
+    // ===================================================
+    // ABRE O ROTEIRO
+    // ===================================================
 
     grupoAtual =
       grupo;
@@ -914,37 +898,23 @@ redirect: "follow",
         "block";
 
 
-    // IDENTIFICAÇÃO GERADA PELO APPS SCRIPT
-
-    let identificacao =
-      registro.codigoParticipante ||
-      "";
-
-
-    if(registro.idEntrevista){
-
-      identificacao +=
-        " | " +
-        registro.idEntrevista;
-
-    }
-
+    // ===================================================
+    // IDENTIFICAÇÃO VISUAL
+    // ===================================================
 
     document
       .getElementById(
         "identificacaoFuncao"
       )
       .innerText =
-        identificacao;
+        "ENTREVISTA EM ANDAMENTO";
 
-
-    // DADOS COMPLEMENTARES
 
     let descricao =
       grupo;
 
 
-    if(grupo === "TECNICO"){
+    if (grupo === "TECNICO") {
 
       descricao +=
         " — " +
@@ -973,11 +943,13 @@ redirect: "follow",
         modalidade;
 
 
-    // CONTROLE DA AUTORIZAÇÃO DA GRAVAÇÃO
+    // ===================================================
+    // AUTORIZAÇÃO DA GRAVAÇÃO
+    // ===================================================
 
-    if(
+    if (
       autorizacao.value !== "SIM"
-    ){
+    ) {
 
       document
         .getElementById(
@@ -1003,7 +975,8 @@ redirect: "follow",
 
   }
 
-  catch(erro){
+
+  catch (erro) {
 
     console.error(erro);
 
@@ -1014,15 +987,7 @@ redirect: "follow",
     );
 
 
-    // REABILITA O BOTÃO EM CASO DE ERRO
-
-    const botao =
-      document.querySelector(
-        '.acoes .primario'
-      );
-
-
-    if(botao){
+    if (botao) {
 
       botao.disabled =
         false;
