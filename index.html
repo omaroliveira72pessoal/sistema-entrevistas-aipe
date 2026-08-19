@@ -480,6 +480,14 @@ disabled>
 
 <audio id="player" controls style="display:none;"></audio>
 
+<button
+  id="btnSalvarCelular"
+  class="secundario"
+  onclick="salvarAudioNoCelular()"
+  disabled>
+  💾 SALVAR ÁUDIO NO CELULAR
+</button>
+
 </div>
 
 </div>
@@ -707,6 +715,7 @@ let indiceAtual = 0;
 let recorder = null;
 let stream = null;
 let partesAudio = [];
+let blobAudioFinal = null;
 
 let tempoAcumulado = 0;
 let inicioTrecho = null;
@@ -1318,6 +1327,15 @@ async function iniciarGravacao(){
           );
 
 
+        blobAudioFinal = blob;
+
+        const tamanhoMB =
+          (blob.size / 1024 / 1024).toFixed(2);
+
+        document
+          .getElementById("btnSalvarCelular")
+          .disabled = false;
+
         const url =
           URL.createObjectURL(blob);
 
@@ -1342,7 +1360,9 @@ async function iniciarGravacao(){
         document
         .getElementById("status")
         .innerText =
-          "GRAVAÇÃO FINALIZADA";
+          "GRAVAÇÃO FINALIZADA — " +
+          tamanhoMB +
+          " MB";
 
 
         registrarMarcadorFinal();
@@ -1527,6 +1547,58 @@ function finalizarGravacao(){
   .getElementById("btnFinalizar")
   .disabled = true;
 
+}
+
+
+/* =========================================================
+   SALVAR ÁUDIO NO CELULAR
+========================================================= */
+
+function salvarAudioNoCelular(){
+
+  if(!blobAudioFinal){
+    alert("Nenhuma gravação finalizada para salvar.");
+    return;
+  }
+
+  const agora = new Date();
+
+  const data =
+    agora.getFullYear() + "-" +
+    String(agora.getMonth() + 1).padStart(2,"0") + "-" +
+    String(agora.getDate()).padStart(2,"0");
+
+  const hora =
+    String(agora.getHours()).padStart(2,"0") + "-" +
+    String(agora.getMinutes()).padStart(2,"0");
+
+  let extensao = "webm";
+  const tipo = blobAudioFinal.type || "";
+
+  if(tipo.includes("ogg")) extensao = "ogg";
+  if(tipo.includes("mp4")) extensao = "m4a";
+
+  const nomeArquivo =
+    "ENTREVISTA_AIPe_" + data + "_" + hora + "." + extensao;
+
+  const url = URL.createObjectURL(blobAudioFinal);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = nomeArquivo;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(function(){
+    URL.revokeObjectURL(url);
+  }, 1000);
+
+  alert(
+    "Áudio preparado para salvar no dispositivo.\n\n" +
+    "Arquivo: " + nomeArquivo + "\n\n" +
+    "Confirme o salvamento/download no navegador, se solicitado."
+  );
 }
 
 
