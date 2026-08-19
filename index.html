@@ -279,6 +279,13 @@ audio {
 </select>
 </div>
 
+<div class="campo">
+<label>Código do participante</label>
+<select id="codigoParticipante">
+<option value="">Selecione primeiro a função...</option>
+</select>
+</div>
+
 <div class="campo oculto" id="campoTecnico">
 <label>Função técnica</label>
 <select id="funcaoTecnica">
@@ -757,6 +764,9 @@ async function abrirEntrevista() {
   const funcaoTecnica =
     document.getElementById("funcaoTecnica").value;
 
+  const codigoParticipante =
+    document.getElementById("codigoParticipante").value;
+
   const modalidade =
     document.getElementById("modalidade").value;
 
@@ -789,6 +799,11 @@ async function abrirEntrevista() {
     return;
   }
 
+  if (!codigoParticipante) {
+    alert("Selecione o código do participante.");
+    return;
+  }
+
   if (!modalidade) {
     alert("Selecione a modalidade.");
     return;
@@ -809,6 +824,9 @@ async function abrirEntrevista() {
   const dados = {
 
     grupo: grupo,
+
+    codigoParticipante:
+      codigoParticipante,
 
     funcaoEspecifica:
       funcaoTecnica,
@@ -918,7 +936,8 @@ async function abrirEntrevista() {
         "identificacaoFuncao"
       )
       .innerText =
-        "ENTREVISTA EM ANDAMENTO";
+        "IDENTIFICAÇÃO DA GRAVAÇÃO: " +
+        codigoParticipante;
 
 
     let descricao =
@@ -1011,6 +1030,41 @@ async function abrirEntrevista() {
   }
 
 }
+
+
+function atualizarCodigosParticipante() {
+  const grupo = document.getElementById("grupo").value;
+  const seletor = document.getElementById("codigoParticipante");
+
+  seletor.innerHTML = "";
+
+  const inicial = document.createElement("option");
+  inicial.value = "";
+  inicial.textContent = grupo
+    ? "Selecione o código..."
+    : "Selecione primeiro a função...";
+  seletor.appendChild(inicial);
+
+  let prefixo = "";
+  if (grupo === "PROFESSOR") prefixo = "P";
+  if (grupo === "DIRETOR") prefixo = "D";
+  if (grupo === "TECNICO") prefixo = "T";
+
+  if (!prefixo) return;
+
+  for (let i = 1; i <= 20; i++) {
+    const codigo = prefixo + String(i).padStart(3, "0");
+    const opcao = document.createElement("option");
+    opcao.value = codigo;
+    opcao.textContent = codigo;
+    seletor.appendChild(opcao);
+  }
+}
+
+document.getElementById("grupo").addEventListener(
+  "change",
+  atualizarCodigosParticipante
+);
 
 /* =========================================================
    MONTA O ROTEIRO CONFORME PARTICIPANTE
@@ -1578,8 +1632,17 @@ function salvarAudioNoCelular(){
   if(tipo.includes("ogg")) extensao = "ogg";
   if(tipo.includes("mp4")) extensao = "m4a";
 
+  const codigoParticipante =
+    document.getElementById("codigoParticipante").value || "SEM_CODIGO";
+
   const nomeArquivo =
-    "ENTREVISTA_AIPe_" + data + "_" + hora + "." + extensao;
+    codigoParticipante +
+    "_ENTREVISTA_AIPe_" +
+    data +
+    "_" +
+    hora +
+    "." +
+    extensao;
 
   const url = URL.createObjectURL(blobAudioFinal);
   const link = document.createElement("a");
