@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -410,7 +410,7 @@ NÃO
     type="button"
     class="secundario"
     onclick="testarEnvioPlanilha()">
-    TESTAR CONEXÃO
+    VERIFICAR MODO LOCAL
   </button>
 
   <button
@@ -813,230 +813,219 @@ async function abrirEntrevista() {
   }
 
 
-  sessaoToken = gerarTokenSessao();
-
-  const dados = {
-
-    sessaoToken: sessaoToken,
-
-    grupo: grupo,
-
-    funcaoEspecifica:
-      funcaoTecnica,
-
-    modalidade:
-      modalidade,
-
-    coordenadoria:
-      coordenadoria,
-
-    codEscola:
-      escola,
-
-    gravacaoAutorizada:
-      autorizacao.value === "SIM"
-        ? "SIM"
-        : "NÃO"
-
-  };
-
-
-  const botao =
-    document.querySelector(
-      '.acoes .primario'
-    );
-
-
-  try {
-
-    if (botao) {
-
-      botao.disabled = true;
-
-      botao.innerText =
-        "REGISTRANDO ENTREVISTA...";
-
-    }
-
-
-    /*
-     * O POST é enviado em no-cors.
-     * A identificação oficial é recuperada em seguida
-     * por uma consulta JSONP usando o token da sessão.
-     */
-    await fetch(
-      URL_BACKEND,
-      {
-
-        method: "POST",
-
-        mode: "no-cors",
-
-        headers: {
-          "Content-Type":
-            "text/plain;charset=utf-8"
-        },
-
-        body: JSON.stringify({
-
-          acao:
-            "iniciarEntrevista",
-
-          dados:
-            dados
-
-        })
-
-      }
-    );
-
-
-    const registro =
-      await aguardarIdentificacaoSessao(
-        sessaoToken
-      );
-
-
-    if (
-      !registro ||
-      !registro.idEntrevista ||
-      !registro.codigoParticipante
-    ) {
-
-      throw new Error(
-        "O cadastro foi enviado, mas a identificação " +
-        "da entrevista não pôde ser confirmada."
-      );
-
-    }
-
-
-    idEntrevistaAtual =
-      registro.idEntrevista;
-
-    codigoParticipanteAtual =
-      registro.codigoParticipante;
-
-
-    grupoAtual =
-      grupo;
-
-    funcaoTecnicaAtual =
-      funcaoTecnica;
-
-
-    montarRoteiro();
-
-
-    document
-      .getElementById("cadastro")
-      .style.display =
-        "none";
-
-
-    document
-      .getElementById("areaEntrevista")
-      .style.display =
-        "block";
-
-
-    document
-      .getElementById(
-        "identificacaoFuncao"
-      )
-      .innerText =
-        codigoParticipanteAtual +
-        " | " +
-        idEntrevistaAtual;
-
-
-    let descricao =
-      grupo;
-
-
-    if (grupo === "TECNICO") {
-
-      descricao +=
-        " — " +
-        funcaoTecnica;
-
-    }
-
-
-    document
-      .getElementById(
-        "identificacaoLocal"
-      )
-      .innerText =
-
-        descricao +
-        " | " +
-        coordenadoria +
-
-        (
-          escola
-            ? " | Escola: " + escola
-            : ""
-        ) +
-
-        " | " +
-        modalidade;
-
-
-    if (
-      autorizacao.value !== "SIM"
-    ) {
-
-      document
-        .getElementById(
-          "btnGravar"
-        )
-        .disabled =
-          true;
-
-
-      document
-        .getElementById(
-          "status"
-        )
-        .innerText =
-          "GRAVAÇÃO NÃO AUTORIZADA";
-
-    }
-
-
-    indiceAtual = 0;
-
-    mostrarBloco();
-
+  /*
+   * PLANO B:
+   * a entrevista abre localmente e não depende
+   * de resposta do Apps Script.
+   *
+   * O código do participante é solicitado ao
+   * pesquisador e usado exclusivamente para
+   * identificar o arquivo de áudio.
+   */
+
+  let prefixo = "P";
+
+  if (grupo === "DIRETOR") {
+    prefixo = "D";
+  }
+
+  if (grupo === "TECNICO") {
+    prefixo = "T";
   }
 
 
-  catch (erro) {
+  let codigoInformado =
+    prompt(
+      "Informe o código do participante.\n\n" +
+      "Exemplo: " +
+      prefixo +
+      "001"
+    );
 
-    console.error(erro);
 
+  if (codigoInformado === null) {
+    return;
+  }
+
+
+  codigoInformado =
+    String(codigoInformado)
+      .trim()
+      .toUpperCase();
+
+
+  const padraoCodigo =
+    new RegExp(
+      "^" +
+      prefixo +
+      "\\d{3}$"
+    );
+
+
+  if (
+    !padraoCodigo.test(
+      codigoInformado
+    )
+  ) {
 
     alert(
-      "Não foi possível iniciar a entrevista.\n\n" +
-      erro.message
+      "Código inválido.\n\n" +
+      "Para este participante, utilize o formato " +
+      prefixo +
+      "001."
     );
 
+    return;
+  }
 
-    if (botao) {
 
-      botao.disabled =
-        false;
+  codigoParticipanteAtual =
+    codigoInformado;
 
-      botao.innerText =
-        "INICIAR ENTREVISTA";
 
-    }
+  /*
+   * ID local apenas para o nome do arquivo.
+   * Não depende da planilha.
+   */
+  const agora =
+    new Date();
+
+
+  const ano =
+    agora.getFullYear();
+
+
+  const mes =
+    String(
+      agora.getMonth() + 1
+    ).padStart(2, "0");
+
+
+  const dia =
+    String(
+      agora.getDate()
+    ).padStart(2, "0");
+
+
+  const hora =
+    String(
+      agora.getHours()
+    ).padStart(2, "0");
+
+
+  const minuto =
+    String(
+      agora.getMinutes()
+    ).padStart(2, "0");
+
+
+  const segundo =
+    String(
+      agora.getSeconds()
+    ).padStart(2, "0");
+
+
+  idEntrevistaAtual =
+    "ENT-" +
+    ano +
+    mes +
+    dia +
+    "-" +
+    hora +
+    minuto +
+    segundo;
+
+
+  grupoAtual =
+    grupo;
+
+  funcaoTecnicaAtual =
+    funcaoTecnica;
+
+
+  montarRoteiro();
+
+
+  document
+    .getElementById("cadastro")
+    .style.display =
+      "none";
+
+
+  document
+    .getElementById("areaEntrevista")
+    .style.display =
+      "block";
+
+
+  document
+    .getElementById(
+      "identificacaoFuncao"
+    )
+    .innerText =
+      codigoParticipanteAtual;
+
+
+  let descricao =
+    grupo;
+
+
+  if (grupo === "TECNICO") {
+
+    descricao +=
+      " — " +
+      funcaoTecnica;
 
   }
 
-}
 
+  document
+    .getElementById(
+      "identificacaoLocal"
+    )
+    .innerText =
+
+      descricao +
+      " | " +
+      coordenadoria +
+
+      (
+        escola
+          ? " | Escola: " + escola
+          : ""
+      ) +
+
+      " | " +
+      modalidade;
+
+
+  if (
+    autorizacao.value !== "SIM"
+  ) {
+
+    document
+      .getElementById(
+        "btnGravar"
+      )
+      .disabled =
+        true;
+
+
+    document
+      .getElementById(
+        "status"
+      )
+      .innerText =
+        "GRAVAÇÃO NÃO AUTORIZADA";
+
+  }
+
+
+  indiceAtual = 0;
+
+  mostrarBloco();
+
+}
 
 /* =========================================================
    IDENTIFICAÇÃO VIA JSONP
@@ -2594,121 +2583,11 @@ function finalizarTesteMicrofone() {
 }
   async function testarBackend() {
 
-  try {
-
-    const tokenTeste =
-      "TESTE-" +
-      Date.now();
-
-
-    const callback =
-      "__aipe_teste_" +
-      Date.now();
-
-
-    await new Promise(
-      function(resolve, reject) {
-
-        const script =
-          document.createElement("script");
-
-
-        const timeout =
-          setTimeout(
-            function() {
-
-              reject(
-                new Error(
-                  "Tempo esgotado."
-                )
-              );
-
-            },
-            5000
-          );
-
-
-        window[callback] =
-          function(retorno) {
-
-            clearTimeout(timeout);
-
-            if (script.parentNode) {
-              script.parentNode.removeChild(script);
-            }
-
-            delete window[callback];
-
-            if (
-              retorno &&
-              retorno.sucesso
-            ) {
-
-              resolve(retorno);
-
-            } else {
-
-              reject(
-                new Error(
-                  retorno &&
-                  retorno.erro
-                    ? retorno.erro
-                    : "Backend sem resposta válida."
-                )
-              );
-
-            }
-
-          };
-
-
-        script.onerror =
-          function() {
-
-            clearTimeout(timeout);
-
-            reject(
-              new Error(
-                "Falha de comunicação."
-              )
-            );
-
-          };
-
-
-        script.src =
-          URL_BACKEND +
-          "?acao=teste" +
-          "&callback=" +
-          encodeURIComponent(
-            callback
-          ) +
-          "&_=" +
-          Date.now();
-
-
-        document.body.appendChild(
-          script
-        );
-
-      }
-    );
-
-
-    alert(
-      "CONEXÃO COM O BACKEND: OK"
-    );
-
-  }
-
-  catch (erro) {
-
-    alert(
-      "ERRO DE COMUNICAÇÃO:\n\n" +
-      erro.message
-    );
-
-  }
+  alert(
+    "PLANO B ATIVO.\n\n" +
+    "A entrevista e a gravação funcionam localmente " +
+    "e não dependem da conexão com a planilha."
+  );
 
 }
 
@@ -2723,5 +2602,3 @@ async function testarEnvioPlanilha() {
 
 </body>
 </html>
-index_AIPe_PLANO_B_salvamento_local.html
-HTML
