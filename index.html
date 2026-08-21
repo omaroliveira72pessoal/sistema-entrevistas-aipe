@@ -271,12 +271,26 @@ audio {
 
 <div class="campo">
 <label>Função do participante</label>
-<select id="grupo">
+<select id="grupo" onchange="atualizarCodigosParticipante()">
 <option value="">Selecione...</option>
 <option value="PROFESSOR">Professor</option>
 <option value="DIRETOR">Diretor</option>
 <option value="TECNICO">Técnico</option>
 </select>
+</div>
+
+<div class="campo">
+  <label for="codigoParticipante">
+    Código do participante
+  </label>
+
+  <select
+    id="codigoParticipante"
+    disabled>
+    <option value="">
+      Selecione primeiro a função
+    </option>
+  </select>
 </div>
 
 <div class="campo oculto" id="campoTecnico">
@@ -764,6 +778,123 @@ document
 });
 
 
+
+function atualizarCodigosParticipante() {
+
+  const grupo =
+    document.getElementById(
+      "grupo"
+    ).value;
+
+
+  const seletor =
+    document.getElementById(
+      "codigoParticipante"
+    );
+
+
+  seletor.innerHTML = "";
+
+
+  if (!grupo) {
+
+    const opcao =
+      document.createElement(
+        "option"
+      );
+
+    opcao.value = "";
+
+    opcao.textContent =
+      "Selecione primeiro a função";
+
+    seletor.appendChild(
+      opcao
+    );
+
+    seletor.disabled =
+      true;
+
+    return;
+
+  }
+
+
+  let prefixo = "P";
+
+
+  if (grupo === "DIRETOR") {
+
+    prefixo = "D";
+
+  }
+
+
+  if (grupo === "TECNICO") {
+
+    prefixo = "T";
+
+  }
+
+
+  const inicial =
+    document.createElement(
+      "option"
+    );
+
+
+  inicial.value = "";
+
+  inicial.textContent =
+    "Selecione o código";
+
+
+  seletor.appendChild(
+    inicial
+  );
+
+
+  for (
+    let numero = 1;
+    numero <= 7;
+    numero++
+  ) {
+
+    const codigo =
+      prefixo +
+      String(numero)
+        .padStart(
+          3,
+          "0"
+        );
+
+
+    const opcao =
+      document.createElement(
+        "option"
+      );
+
+
+    opcao.value =
+      codigo;
+
+    opcao.textContent =
+      codigo;
+
+
+    seletor.appendChild(
+      opcao
+    );
+
+  }
+
+
+  seletor.disabled =
+    false;
+
+}
+
+
 async function abrirEntrevista() {
 
   const grupo =
@@ -815,67 +946,25 @@ async function abrirEntrevista() {
 
   /*
    * PLANO B:
-   * a entrevista abre localmente e não depende
-   * de resposta do Apps Script.
-   *
-   * O código do participante é solicitado ao
-   * pesquisador e usado exclusivamente para
-   * identificar o arquivo de áudio.
+   * o código é escolhido na caixa seletora.
    */
 
-  let prefixo = "P";
-
-  if (grupo === "DIRETOR") {
-    prefixo = "D";
-  }
-
-  if (grupo === "TECNICO") {
-    prefixo = "T";
-  }
+  const codigoInformado =
+    document
+      .getElementById(
+        "codigoParticipante"
+      )
+      .value;
 
 
-  let codigoInformado =
-    prompt(
-      "Informe o código do participante.\n\n" +
-      "Exemplo: " +
-      prefixo +
-      "001"
-    );
-
-
-  if (codigoInformado === null) {
-    return;
-  }
-
-
-  codigoInformado =
-    String(codigoInformado)
-      .trim()
-      .toUpperCase();
-
-
-  const padraoCodigo =
-    new RegExp(
-      "^" +
-      prefixo +
-      "\\d{3}$"
-    );
-
-
-  if (
-    !padraoCodigo.test(
-      codigoInformado
-    )
-  ) {
+  if (!codigoInformado) {
 
     alert(
-      "Código inválido.\n\n" +
-      "Para este participante, utilize o formato " +
-      prefixo +
-      "001."
+      "Selecione o código do participante."
     );
 
     return;
+
   }
 
 
