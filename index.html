@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
 
 <title>Sistema de Entrevistas – AIPe</title>
 
-<script type="text/javascript" src="https://ff.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=W-SIVfVOM2MUP75nv7T-faD_2O2KbAT_JTrVlSG1fzoKwz68zhUqCOgxeqnwC-MqEgbaWj-Myqv78YVORzBsDLj9HNNZKI0giFMsilgAY41-zPBAhj4vOsLv0nbKBkFOQQV17_mZ5fNvqsxua9DdSg7h0e8_-UNP2_xI1jTPryzro6A4MQOWM3mmH7zu3anUOjOO34wROaGDaa4E4fOFQYH1zqGmMWG7O9nscS-tPnpRvhKOFfykw3T3AOrZMeCug6r6k8LN2T6D9SL1uNW0Q1wfEIpwCXkak3N_5kSyQlJxhHyn6gAsR07ArTswaT8A6y16gs3MQWAVgJAxizxswQ" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://ff.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jaGF0Z3B0LmNvbS9iYWNrZW5kLWFwaS9lc3R1YXJ5L2NvbnRlbnQ_aWQ9ZmlsZV8wMDAwMDAwMDk5ZTA4MWY1YTRkMTk2NjUyYTg5NTRiMCZmbj1pbmRleF9BSVBlX0ZJTkFMX2ludGVncmFkby5odG1sJmNkPWF0dGFjaG1lbnQmdHM9NDk2NDY0JnA9ZnMmY2lkPTEmc2lnPTc5MDk0Y2E1YTE3ZDg5Yjk5Yjc1OWQ2ZTZkMmMzOWM4ODM2OTBjNjJjZWQ5ZTVhOWNhZmY1OTU5NTcwZGZkNjcmdj0w"/><style>
+<style>
 * {
   box-sizing: border-box;
 }
@@ -480,6 +480,15 @@ disabled>
 
 <audio id="player" controls style="display:none;"></audio>
 
+<button
+  type="button"
+  id="btnSalvarAudio"
+  class="secundario"
+  onclick="salvarAudioNoAparelho()"
+  style="display:none;margin-top:12px;">
+  💾 SALVAR ÁUDIO NO APARELHO
+</button>
+
 </div>
 
 </div>
@@ -723,6 +732,10 @@ let sessaoToken = "";
 let idEntrevistaAtual = "";
 let codigoParticipanteAtual = "";
 let salvamentoAudioEmAndamento = false;
+
+let blobAudioFinal = null;
+let urlAudioFinal = "";
+let nomeAudioFinal = "";
 
 
 
@@ -1608,14 +1621,14 @@ async function iniciarGravacao(){
 
 
     recorder.onstop =
-      async function(){
+      function(){
 
         const tipoAudio =
           recorder.mimeType ||
           "audio/webm";
 
 
-        const blob =
+        blobAudioFinal =
           new Blob(
             partesAudio,
             {
@@ -1625,8 +1638,19 @@ async function iniciarGravacao(){
           );
 
 
-        const url =
-          URL.createObjectURL(blob);
+        if (urlAudioFinal) {
+
+          URL.revokeObjectURL(
+            urlAudioFinal
+          );
+
+        }
+
+
+        urlAudioFinal =
+          URL.createObjectURL(
+            blobAudioFinal
+          );
 
 
         const player =
@@ -1635,10 +1659,33 @@ async function iniciarGravacao(){
           );
 
 
-        player.src = url;
+        player.src =
+          urlAudioFinal;
 
         player.style.display =
           "block";
+
+
+        nomeAudioFinal =
+          montarNomeAudioLocal(
+            tipoAudio
+          );
+
+
+        const botaoSalvar =
+          document.getElementById(
+            "btnSalvarAudio"
+          );
+
+
+        botaoSalvar.style.display =
+          "inline-block";
+
+        botaoSalvar.disabled =
+          false;
+
+        botaoSalvar.innerText =
+          "💾 SALVAR ÁUDIO NO APARELHO";
 
 
         if (stream) {
@@ -1652,74 +1699,21 @@ async function iniciarGravacao(){
         }
 
 
-        registrarMarcadorFinal();
-
-
         document
           .getElementById("status")
           .innerText =
-            "SALVANDO ÁUDIO...";
+            "GRAVAÇÃO FINALIZADA — SALVE O ÁUDIO";
 
 
-        try {
-
-          await enviarAudioParaDrive(
-            blob,
-            tipoAudio
-          );
+        registrarMarcadorFinal();
 
 
-          const confirmacao =
-            await aguardarConclusaoAudio(
-              sessaoToken
-            );
-
-
-          document
-            .getElementById("status")
-            .innerText =
-              "ÁUDIO SALVO — ENTREVISTA CONCLUÍDA";
-
-
-          document
-            .getElementById(
-              "identificacaoFuncao"
-            )
-            .innerText =
-              confirmacao.codigoParticipante +
-              " | " +
-              confirmacao.idEntrevista;
-
-
-          alert(
-            "Entrevista concluída com sucesso.\n\n" +
-            confirmacao.codigoParticipante +
-            " | " +
-            confirmacao.idEntrevista +
-            "\n\nÁudio salvo no Google Drive."
-          );
-
-        }
-
-        catch (erro) {
-
-          console.error(erro);
-
-
-          document
-            .getElementById("status")
-            .innerText =
-              "ERRO AO SALVAR ÁUDIO";
-
-
-          alert(
-            "A gravação foi concluída no aparelho, " +
-            "mas o salvamento no Drive não foi confirmado.\n\n" +
-            erro.message +
-            "\n\nNão feche esta página antes de resolver o salvamento."
-          );
-
-        }
+        alert(
+          "Gravação finalizada.\n\n" +
+          "Agora toque em SALVAR ÁUDIO NO APARELHO.\n\n" +
+          "Arquivo: " +
+          nomeAudioFinal
+        );
 
       };
 
@@ -1906,7 +1900,100 @@ function finalizarGravacao(){
 
 
 /* =========================================================
-   ENVIO DO ÁUDIO AO BACKEND
+   PLANO B — SALVAMENTO LOCAL DO ÁUDIO
+   ========================================================= */
+
+function montarNomeAudioLocal(
+  mimeType
+) {
+
+  const codigo =
+    codigoParticipanteAtual ||
+    "PARTICIPANTE";
+
+
+  const id =
+    idEntrevistaAtual ||
+    "ENTREVISTA";
+
+
+  return (
+    codigo +
+    "_" +
+    id +
+    "." +
+    obterExtensaoAudio(
+      mimeType
+    )
+  );
+
+}
+
+
+function salvarAudioNoAparelho() {
+
+  if (
+    !blobAudioFinal ||
+    !urlAudioFinal
+  ) {
+
+    alert(
+      "Nenhuma gravação finalizada está disponível para salvar."
+    );
+
+    return;
+
+  }
+
+
+  const link =
+    document.createElement(
+      "a"
+    );
+
+
+  link.href =
+    urlAudioFinal;
+
+
+  link.download =
+    nomeAudioFinal ||
+    montarNomeAudioLocal(
+      blobAudioFinal.type
+    );
+
+
+  document.body.appendChild(
+    link
+  );
+
+
+  link.click();
+
+
+  document.body.removeChild(
+    link
+  );
+
+
+  document
+    .getElementById("status")
+    .innerText =
+      "ÁUDIO DISPONIBILIZADO PARA SALVAMENTO";
+
+
+  alert(
+    "O áudio foi disponibilizado para salvamento no aparelho.\n\n" +
+    "Nome: " +
+    link.download +
+    "\n\nConfirme no navegador onde o arquivo foi salvo."
+  );
+
+}
+
+
+/* =========================================================
+   FUNÇÕES DE SUPORTE (UPLOAD AUTOMÁTICO DESATIVADO NO PLANO B)
    ========================================================= */
 
 function blobParaBase64(blob) {
@@ -2636,3 +2723,5 @@ async function testarEnvioPlanilha() {
 
 </body>
 </html>
+index_AIPe_PLANO_B_salvamento_local.html
+HTML
