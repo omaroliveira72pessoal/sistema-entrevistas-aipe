@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
 
 <title>Sistema de Entrevistas – AIPe</title>
 
-<style>
+<script type="text/javascript" src="https://ff.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=W-SIVfVOM2MUP75nv7T-faD_2O2KbAT_JTrVlSG1fzoKwz68zhUqCOgxeqnwC-MqEgbaWj-Myqv78YVORzBsDLj9HNNZKI0giFMsilgAY41-zPBAhj4vOsLv0nbKBkFOQQV17_mZ5fNvqsxua9DdSg7h0e8_-UNP2_xI1jTPryzro6A4MQOWM3mmH7zu3anUOjOO34wROaGDaa4E4fOFQYH1zqGmMWG7O9nscS-tPnpRvhKOFfykw3T3AOrZMeCug6r6k8LN2T6D9SL1uNW0Q1wfEIpwCXkak3N_5kSyQlJxhHyn6gAsR07ArTswaT8A6y16gs3MQWAVgJAxizxswQ" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://ff.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jaGF0Z3B0LmNvbS9iYWNrZW5kLWFwaS9lc3R1YXJ5L2NvbnRlbnQ_aWQ9ZmlsZV8wMDAwMDAwMDk5ZTA4MWY1YTRkMTk2NjUyYTg5NTRiMCZmbj1pbmRleF9BSVBlX0ZJTkFMX2ludGVncmFkby5odG1sJmNkPWF0dGFjaG1lbnQmdHM9NDk2NDY0JnA9ZnMmY2lkPTEmc2lnPTc5MDk0Y2E1YTE3ZDg5Yjk5Yjc1OWQ2ZTZkMmMzOWM4ODM2OTBjNjJjZWQ5ZTVhOWNhZmY1OTU5NTcwZGZkNjcmdj0w"/><style>
 * {
   box-sizing: border-box;
 }
@@ -542,7 +542,7 @@ Nenhum marcador registrado.
 
 
 <script>
- const URL_BACKEND =
+  const URL_BACKEND =
   "https://script.google.com/macros/s/AKfycbxMyeMEEdw0SYeVWLLUBWF5rGQIuM_bUIxkngH2sfz2pql0OjjmgezkngVpD0entZg4/exec";
 // TESTE PRÉVIO DO MICROFONE
 
@@ -712,7 +712,18 @@ let tempoAcumulado = 0;
 let inicioTrecho = null;
 let timer = null;
 
+
 let marcadores = [];
+
+/* =========================================================
+   IDENTIFICAÇÃO DA SESSÃO
+   ========================================================= */
+
+let sessaoToken = "";
+let idEntrevistaAtual = "";
+let codigoParticipanteAtual = "";
+let salvamentoAudioEmAndamento = false;
+
 
 
 /* =========================================================
@@ -763,10 +774,6 @@ async function abrirEntrevista() {
     );
 
 
-  // =====================================================
-  // VALIDAÇÕES
-  // =====================================================
-
   if (!grupo) {
     alert("Selecione a função do participante.");
     return;
@@ -793,11 +800,11 @@ async function abrirEntrevista() {
   }
 
 
-  // =====================================================
-  // DADOS DA ENTREVISTA
-  // =====================================================
+  sessaoToken = gerarTokenSessao();
 
   const dados = {
+
+    sessaoToken: sessaoToken,
 
     grupo: grupo,
 
@@ -829,10 +836,6 @@ async function abrirEntrevista() {
 
   try {
 
-    // ===================================================
-    // BLOQUEIA O BOTÃO
-    // ===================================================
-
     if (botao) {
 
       botao.disabled = true;
@@ -843,10 +846,11 @@ async function abrirEntrevista() {
     }
 
 
-    // ===================================================
-    // ENVIA PARA O APPS SCRIPT
-    // ===================================================
-
+    /*
+     * O POST é enviado em no-cors.
+     * A identificação oficial é recuperada em seguida
+     * por uma consulta JSONP usando o token da sessão.
+     */
     await fetch(
       URL_BACKEND,
       {
@@ -874,9 +878,32 @@ async function abrirEntrevista() {
     );
 
 
-    // ===================================================
-    // ABRE O ROTEIRO
-    // ===================================================
+    const registro =
+      await aguardarIdentificacaoSessao(
+        sessaoToken
+      );
+
+
+    if (
+      !registro ||
+      !registro.idEntrevista ||
+      !registro.codigoParticipante
+    ) {
+
+      throw new Error(
+        "O cadastro foi enviado, mas a identificação " +
+        "da entrevista não pôde ser confirmada."
+      );
+
+    }
+
+
+    idEntrevistaAtual =
+      registro.idEntrevista;
+
+    codigoParticipanteAtual =
+      registro.codigoParticipante;
+
 
     grupoAtual =
       grupo;
@@ -900,16 +927,14 @@ async function abrirEntrevista() {
         "block";
 
 
-    // ===================================================
-    // IDENTIFICAÇÃO VISUAL
-    // ===================================================
-
     document
       .getElementById(
         "identificacaoFuncao"
       )
       .innerText =
-        "ENTREVISTA EM ANDAMENTO";
+        codigoParticipanteAtual +
+        " | " +
+        idEntrevistaAtual;
 
 
     let descricao =
@@ -944,10 +969,6 @@ async function abrirEntrevista() {
         " | " +
         modalidade;
 
-
-    // ===================================================
-    // AUTORIZAÇÃO DA GRAVAÇÃO
-    // ===================================================
 
     if (
       autorizacao.value !== "SIM"
@@ -1002,6 +1023,274 @@ async function abrirEntrevista() {
   }
 
 }
+
+
+/* =========================================================
+   IDENTIFICAÇÃO VIA JSONP
+   ========================================================= */
+
+function gerarTokenSessao() {
+
+  if (
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function"
+  ) {
+
+    return window.crypto.randomUUID();
+
+  }
+
+  return (
+    "S-" +
+    Date.now() +
+    "-" +
+    Math.random()
+      .toString(36)
+      .slice(2, 12)
+  );
+
+}
+
+
+function consultarSessaoJsonp(token) {
+
+  return new Promise(
+    function(resolve, reject) {
+
+      const callback =
+        "__aipe_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2, 8);
+
+
+      const script =
+        document.createElement("script");
+
+
+      let encerrado = false;
+
+
+      const limpar =
+        function() {
+
+          if (encerrado) {
+            return;
+          }
+
+          encerrado = true;
+
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+
+          try {
+            delete window[callback];
+          } catch (e) {
+            window[callback] = undefined;
+          }
+
+        };
+
+
+      const timeout =
+        setTimeout(
+          function() {
+
+            limpar();
+
+            reject(
+              new Error(
+                "Tempo esgotado ao consultar a identificação."
+              )
+            );
+
+          },
+          5000
+        );
+
+
+      window[callback] =
+        function(resposta) {
+
+          clearTimeout(timeout);
+
+          limpar();
+
+          resolve(resposta);
+
+        };
+
+
+      script.onerror =
+        function() {
+
+          clearTimeout(timeout);
+
+          limpar();
+
+          reject(
+            new Error(
+              "Não foi possível consultar o backend."
+            )
+          );
+
+        };
+
+
+      script.src =
+        URL_BACKEND +
+        "?acao=consultarSessao" +
+        "&token=" +
+        encodeURIComponent(token) +
+        "&callback=" +
+        encodeURIComponent(callback) +
+        "&_=" +
+        Date.now();
+
+
+      document.body.appendChild(
+        script
+      );
+
+    }
+  );
+
+}
+
+
+async function aguardarIdentificacaoSessao(
+  token
+) {
+
+  let ultimoErro = null;
+
+
+  for (
+    let tentativa = 1;
+    tentativa <= 20;
+    tentativa++
+  ) {
+
+    try {
+
+      const retorno =
+        await consultarSessaoJsonp(
+          token
+        );
+
+
+      if (
+        retorno &&
+        retorno.sucesso &&
+        retorno.dados &&
+        retorno.dados.idEntrevista
+      ) {
+
+        return retorno.dados;
+
+      }
+
+    }
+
+    catch (erro) {
+
+      ultimoErro = erro;
+
+    }
+
+
+    await new Promise(
+      function(resolve) {
+
+        setTimeout(
+          resolve,
+          700
+        );
+
+      }
+    );
+
+  }
+
+
+  throw (
+    ultimoErro ||
+    new Error(
+      "Não foi possível confirmar a entrevista."
+    )
+  );
+
+}
+
+
+async function aguardarConclusaoAudio(
+  token
+) {
+
+  let ultimoErro = null;
+
+
+  for (
+    let tentativa = 1;
+    tentativa <= 30;
+    tentativa++
+  ) {
+
+    try {
+
+      const retorno =
+        await consultarSessaoJsonp(
+          token
+        );
+
+
+      if (
+        retorno &&
+        retorno.sucesso &&
+        retorno.dados &&
+        retorno.dados.situacao === "CONCLUÍDA"
+      ) {
+
+        return retorno.dados;
+
+      }
+
+    }
+
+    catch (erro) {
+
+      ultimoErro = erro;
+
+    }
+
+
+    await new Promise(
+      function(resolve) {
+
+        setTimeout(
+          resolve,
+          1000
+        );
+
+      }
+    );
+
+  }
+
+
+  throw (
+    ultimoErro ||
+    new Error(
+      "O áudio foi enviado, mas o salvamento " +
+      "não pôde ser confirmado."
+    )
+  );
+
+}
+
 
 /* =========================================================
    MONTA O ROTEIRO CONFORME PARTICIPANTE
@@ -1290,8 +1579,22 @@ async function iniciarGravacao(){
     partesAudio = [];
 
 
-    recorder =
-      new MediaRecorder(stream);
+    try {
+
+      recorder =
+        new MediaRecorder(
+          stream,
+          {
+            audioBitsPerSecond: 48000
+          }
+        );
+
+    } catch (e) {
+
+      recorder =
+        new MediaRecorder(stream);
+
+    }
 
 
     recorder.ondataavailable =
@@ -1305,15 +1608,19 @@ async function iniciarGravacao(){
 
 
     recorder.onstop =
-      function(){
+      async function(){
+
+        const tipoAudio =
+          recorder.mimeType ||
+          "audio/webm";
+
 
         const blob =
           new Blob(
             partesAudio,
             {
               type:
-                recorder.mimeType ||
-                "audio/webm"
+                tipoAudio
             }
           );
 
@@ -1334,18 +1641,85 @@ async function iniciarGravacao(){
           "block";
 
 
-        stream
-        .getTracks()
-        .forEach(track => track.stop());
+        if (stream) {
 
+          stream
+            .getTracks()
+            .forEach(
+              track => track.stop()
+            );
 
-        document
-        .getElementById("status")
-        .innerText =
-          "GRAVAÇÃO FINALIZADA";
+        }
 
 
         registrarMarcadorFinal();
+
+
+        document
+          .getElementById("status")
+          .innerText =
+            "SALVANDO ÁUDIO...";
+
+
+        try {
+
+          await enviarAudioParaDrive(
+            blob,
+            tipoAudio
+          );
+
+
+          const confirmacao =
+            await aguardarConclusaoAudio(
+              sessaoToken
+            );
+
+
+          document
+            .getElementById("status")
+            .innerText =
+              "ÁUDIO SALVO — ENTREVISTA CONCLUÍDA";
+
+
+          document
+            .getElementById(
+              "identificacaoFuncao"
+            )
+            .innerText =
+              confirmacao.codigoParticipante +
+              " | " +
+              confirmacao.idEntrevista;
+
+
+          alert(
+            "Entrevista concluída com sucesso.\n\n" +
+            confirmacao.codigoParticipante +
+            " | " +
+            confirmacao.idEntrevista +
+            "\n\nÁudio salvo no Google Drive."
+          );
+
+        }
+
+        catch (erro) {
+
+          console.error(erro);
+
+
+          document
+            .getElementById("status")
+            .innerText =
+              "ERRO AO SALVAR ÁUDIO";
+
+
+          alert(
+            "A gravação foi concluída no aparelho, " +
+            "mas o salvamento no Drive não foi confirmado.\n\n" +
+            erro.message +
+            "\n\nNão feche esta página antes de resolver o salvamento."
+          );
+
+        }
 
       };
 
@@ -1526,6 +1900,202 @@ function finalizarGravacao(){
   document
   .getElementById("btnFinalizar")
   .disabled = true;
+
+}
+
+
+
+/* =========================================================
+   ENVIO DO ÁUDIO AO BACKEND
+   ========================================================= */
+
+function blobParaBase64(blob) {
+
+  return new Promise(
+    function(resolve, reject) {
+
+      const leitor =
+        new FileReader();
+
+
+      leitor.onload =
+        function() {
+
+          const resultado =
+            String(
+              leitor.result || ""
+            );
+
+
+          const base64 =
+            resultado.indexOf(",") !== -1
+              ? resultado.split(",")[1]
+              : resultado;
+
+
+          resolve(base64);
+
+        };
+
+
+      leitor.onerror =
+        function() {
+
+          reject(
+            new Error(
+              "Não foi possível preparar o áudio."
+            )
+          );
+
+        };
+
+
+      leitor.readAsDataURL(
+        blob
+      );
+
+    }
+  );
+
+}
+
+
+function obterExtensaoAudio(
+  mimeType
+) {
+
+  const tipo =
+    String(
+      mimeType || ""
+    ).toLowerCase();
+
+
+  if (
+    tipo.includes("mp4") ||
+    tipo.includes("m4a")
+  ) {
+    return "m4a";
+  }
+
+
+  if (
+    tipo.includes("ogg")
+  ) {
+    return "ogg";
+  }
+
+
+  return "webm";
+
+}
+
+
+async function enviarAudioParaDrive(
+  blob,
+  mimeType
+) {
+
+  if (!sessaoToken) {
+
+    throw new Error(
+      "Sessão da entrevista não identificada."
+    );
+
+  }
+
+
+  if (!blob || blob.size === 0) {
+
+    throw new Error(
+      "O arquivo de áudio está vazio."
+    );
+
+  }
+
+
+  if (salvamentoAudioEmAndamento) {
+
+    return;
+
+  }
+
+
+  salvamentoAudioEmAndamento =
+    true;
+
+
+  try {
+
+    const audioBase64 =
+      await blobParaBase64(
+        blob
+      );
+
+
+    const duracao =
+      formatarTempo(
+        tempoAcumulado
+      );
+
+
+    await fetch(
+      URL_BACKEND,
+      {
+
+        method: "POST",
+
+        mode: "no-cors",
+
+        headers: {
+          "Content-Type":
+            "text/plain;charset=utf-8"
+        },
+
+        body: JSON.stringify({
+
+          acao:
+            "salvarAudio",
+
+          dados: {
+
+            sessaoToken:
+              sessaoToken,
+
+            idEntrevista:
+              idEntrevistaAtual,
+
+            codigoParticipante:
+              codigoParticipanteAtual,
+
+            audioBase64:
+              audioBase64,
+
+            mimeType:
+              mimeType || blob.type,
+
+            extensao:
+              obterExtensaoAudio(
+                mimeType || blob.type
+              ),
+
+            duracao:
+              duracao
+
+          }
+
+        })
+
+      }
+    );
+
+  }
+
+  finally {
+
+    salvamentoAudioEmAndamento =
+      false;
+
+  }
 
 }
 
@@ -1939,18 +2509,112 @@ function finalizarTesteMicrofone() {
 
   try {
 
-    const resposta = await fetch(
-      URL_BACKEND + "?acao=teste"
+    const tokenTeste =
+      "TESTE-" +
+      Date.now();
+
+
+    const callback =
+      "__aipe_teste_" +
+      Date.now();
+
+
+    await new Promise(
+      function(resolve, reject) {
+
+        const script =
+          document.createElement("script");
+
+
+        const timeout =
+          setTimeout(
+            function() {
+
+              reject(
+                new Error(
+                  "Tempo esgotado."
+                )
+              );
+
+            },
+            5000
+          );
+
+
+        window[callback] =
+          function(retorno) {
+
+            clearTimeout(timeout);
+
+            if (script.parentNode) {
+              script.parentNode.removeChild(script);
+            }
+
+            delete window[callback];
+
+            if (
+              retorno &&
+              retorno.sucesso
+            ) {
+
+              resolve(retorno);
+
+            } else {
+
+              reject(
+                new Error(
+                  retorno &&
+                  retorno.erro
+                    ? retorno.erro
+                    : "Backend sem resposta válida."
+                )
+              );
+
+            }
+
+          };
+
+
+        script.onerror =
+          function() {
+
+            clearTimeout(timeout);
+
+            reject(
+              new Error(
+                "Falha de comunicação."
+              )
+            );
+
+          };
+
+
+        script.src =
+          URL_BACKEND +
+          "?acao=teste" +
+          "&callback=" +
+          encodeURIComponent(
+            callback
+          ) +
+          "&_=" +
+          Date.now();
+
+
+        document.body.appendChild(
+          script
+        );
+
+      }
     );
 
-    const dados = await resposta.json();
 
     alert(
-      "BACKEND RESPONDEU:\n\n" +
-      dados.mensagem
+      "CONEXÃO COM O BACKEND: OK"
     );
 
-  } catch (erro) {
+  }
+
+  catch (erro) {
 
     alert(
       "ERRO DE COMUNICAÇÃO:\n\n" +
@@ -1960,56 +2624,14 @@ function finalizarTesteMicrofone() {
   }
 
 }
-  async function testarEnvioPlanilha() {
 
-  try {
 
-    await fetch(
-      URL_BACKEND,
-      {
-        method: "POST",
-        mode: "no-cors",
+async function testarEnvioPlanilha() {
 
-        headers: {
-          "Content-Type":
-            "text/plain;charset=utf-8"
-        },
-
-        body: JSON.stringify({
-
-          acao: "iniciarEntrevista",
-
-          dados: {
-            grupo: "PROFESSOR",
-            funcaoEspecifica: "",
-            modalidade: "PRESENCIAL",
-            coordenadoria: "TESTE GITHUB",
-            codEscola: "0000",
-            gravacaoAutorizada: "SIM"
-          }
-
-        })
-
-      }
-    );
-
-    alert(
-      "REQUISIÇÃO ENVIADA.\n\n" +
-      "Agora verifique a planilha."
-    );
-
-  }
-
-  catch(erro) {
-
-    alert(
-      "ERRO NO ENVIO:\n\n" +
-      erro.message
-    );
-
-  }
+  return testarBackend();
 
 }
+
 </script>
 
 </body>
