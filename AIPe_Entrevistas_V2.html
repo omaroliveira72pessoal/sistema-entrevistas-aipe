@@ -1,0 +1,155 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AIPe V2</title><style>body{font:16px system-ui;background:#edf3f8;color:#17365d;margin:0}header{background:#17365d;color:white;padding:20px;text-align:center}main{max-width:680px;margin:auto;padding:14px}section{background:white;border-radius:12px;padding:18px;margin-bottom:14px}label{display:block;margin:12px 0 5px}input,select,button{font:inherit;padding:12px;border-radius:8px;box-sizing:border-box;width:100%;border:1px solid #b6c6d5}button{background:#17365d;color:white;margin-top:10px;cursor:pointer}button:disabled{opacity:.45}#stop{background:#a52b38}#msg{white-space:pre-wrap}small{color:#52677a}audio{width:100%}</style><header><strong>AIPe — SISTEMA DE ENTREVISTAS</strong><br>Roteiro semiestruturado · V2</header><main><section id="login"><label>Perfil</label><select id="grupo"><option value="PROFESSOR">Professor</option><option value="DIRETOR">Diretor</option><option value="ASSESSOR">Técnico — Assessor</option><option value="COORDENADOR">Técnico — Coordenador</option><option value="OUTRA">Técnico — Outra função</option></select><label>Código do participante</label><input id="codigo" placeholder="P001" autocomplete="off"><label>Chave individual</label><input id="chave" type="password" autocomplete="off"><label><input id="consent" type="checkbox" style="width:auto"> Autorizo a gravação das minhas respostas.</label><button id="entrar">Iniciar entrevista</button></section><section id="work" hidden><strong id="who"></strong><label>Questão</label><select id="quest"></select><h3 id="enunciado"></h3><p id="clock">00:00</p><button id="start">🎙 Iniciar resposta</button><button id="stop" disabled>Finalizar resposta</button><audio id="player" controls hidden></audio><button id="retry">Verificar / reenviar pendências</button><button id="backup" hidden>Baixar áudio pendente</button><p id="summary"></p><div id="list"></div></section><section id="msg" role="status">Aguardando identificação.</section></main><script>const URL_BACKEND = "https://script.google.com/macros/s/AKfycbxMyeMEEdw0SYeVWLLUBWF5rGQIuM_bUIxkngH2sfz2pql0OjjmgezkngVpD0entZg4/exec";
+const blocosBase = [
+
+{
+ordem:2,
+titulo:"CARACTERIZAÇÃO DA ATUAÇÃO PROFISSIONAL",
+central:"Poderia descrever brevemente suas principais atribuições e como elas se relacionam com o trabalho pedagógico da escola?",
+comuns:[]
+},
+
+{
+ordem:3,
+titulo:"GESTÃO E ACOMPANHAMENTO DAS AÇÕES PEDAGÓGICAS",
+central:"Como são definidas e acompanhadas as ações pedagógicas nas escolas, considerando sua experiência e função profissional?",
+comuns:[
+"Como são definidas as ações pedagógicas previstas no Plano de Gestão da escola?",
+"Quem participa efetivamente dessa definição?",
+"Como ocorre a participação da escola e das instâncias externas nesse processo?",
+"Como você percebe a autonomia da escola na elaboração do Plano?",
+"Em que medida as ações previstas no Plano correspondem às necessidades identificadas pela própria escola?",
+"Como o Plano de Gestão é utilizado pela escola depois de sua elaboração e validação?",
+"De que maneira ele participa das decisões e do trabalho pedagógico cotidiano?"
+],
+diretor:[
+"Como ocorre a participação do assessor na elaboração e no acompanhamento do Plano de Gestão?",
+"Que tipo de orientação a escola recebe durante sua elaboração?",
+"Quando há divergência entre a compreensão da escola e as orientações recebidas, como isso é resolvido?",
+"Depois da validação do Plano, como a escola acompanha as ações que foram definidas?"
+],
+assessor:[
+"Como você compreende sua função no processo de elaboração e acompanhamento do Plano de Gestão?",
+"Como ocorre sua participação na definição das ações propostas pela escola?",
+"Quando identifica fragilidades em uma ação proposta pela escola, como costuma proceder?",
+"Como você define o limite entre orientar a escola na elaboração das ações e preservar a autoria da própria escola sobre o Plano de Gestão?",
+"Como concilia o acompanhamento do Plano com as demais demandas do sistema que precisam ser orientadas ou acompanhadas junto às escolas?"
+],
+coordenador:[
+"O que é considerado no processo de análise e validação de um Plano de Gestão?",
+"Como são analisadas a coerência entre problemas, causas e ações e a adequação dos prazos?",
+"Quando são identificadas fragilidades no Plano, como ocorre a devolutiva à escola e ao assessor?",
+"Como você compreende as responsabilidades da escola, do assessor e da coordenação na qualidade final do Plano?",
+"Depois da validação, de que forma a execução do Plano é acompanhada?"
+]
+},
+
+{
+ordem:4,
+titulo:"CONCEPÇÕES SOBRE AVALIAÇÃO DA APRENDIZAGEM",
+central:"Na sua experiência, o que significa avaliar a aprendizagem dos estudantes?",
+comuns:[
+"Como essa avaliação costuma acontecer no dia a dia da escola?",
+"Que informações essas avaliações fornecem sobre a aprendizagem dos estudantes?",
+"O que normalmente é feito com as informações obtidas por meio dessas avaliações?",
+"Que papel as provas e as notas costumam ter nesse processo?",
+"Existem outras formas utilizadas pela escola ou pelos professores para acompanhar a aprendizagem? Quais?"
+]
+},
+
+{
+ordem:5,
+titulo:"PROCESSOS AVALIATIVOS EXTERNOS",
+central:"Como os resultados das avaliações externas (SAEB ou SADEAM) chegam à escola e são utilizados no trabalho pedagógico?",
+comuns:[
+"Como esses resultados são analisados pela escola?",
+"Quem costuma participar dessa análise?",
+"Que decisões ou ações são tomadas a partir desses resultados?",
+"Quais os maiores desafios para relacionar os resultados dessas avaliações ao que os estudantes demonstram no cotidiano escolar?",
+"O que esses índices permitem compreender sobre a aprendizagem dos estudantes?",
+"Há aspectos da aprendizagem que, na sua percepção, esses índices não conseguem captar? Quais?"
+]
+},
+
+{
+ordem:6,
+titulo:"PRÁTICAS DE REFLEXÃO SOBRE O TRABALHO ESCOLAR",
+central:"A escola costuma analisar coletivamente e de forma reflexiva suas práticas, dificuldades e resultados?",
+comuns:[
+"Como esses momentos acontecem?",
+"Quem participa?",
+"O que costuma ser analisado?",
+"O que geralmente provoca ou motiva esses momentos de reflexão?",
+"Essas análises resultam em decisões ou mudanças nas práticas pedagógicas? De que forma?",
+"Como as decisões tomadas nesses momentos são posteriormente acompanhadas?",
+"Na sua percepção, por que esse tipo de reflexão não ocorre ou ocorre apenas em situações específicas?",
+"O que seria necessário para que esses momentos acontecessem com maior regularidade?"
+]
+},
+
+{
+ordem:7,
+titulo:"A ESCOLA DIANTE DA AVALIAÇÃO DO PRÓPRIO TRABALHO",
+central:"De que forma a escola poderia avaliar seu próprio trabalho para contribuir com a melhoria da aprendizagem dos estudantes?",
+comuns:[
+"Que aspectos do trabalho da escola deveriam ser considerados nessa avaliação?",
+"Quem deveria participar desse processo?",
+"Como professores, gestores, estudantes e famílias poderiam participar?",
+"De onde deveriam partir os critérios utilizados para essa avaliação?",
+"O que deveria ser feito com os resultados dessa avaliação?",
+"Quais condições seriam necessárias para que esse processo acontecesse de forma efetiva?",
+"Que dificuldades poderiam limitar sua realização?"
+]
+},
+
+{
+ordem:8,
+titulo:"ARTICULAÇÃO ENTRE CURRÍCULO E AVALIAÇÕES EXTERNAS",
+central:"Você percebe relação entre o que é trabalhado no currículo e o que é avaliado nas avaliações externas?",
+comuns:[
+"Como você percebe essa relação?",
+"Essa relação interfere de alguma maneira no planejamento ou nas práticas pedagógicas da escola? Como?",
+"Há situações em que aquilo que é priorizado no trabalho pedagógico da escola difere do que recebe maior atenção nas avaliações externas? Poderia dar algum exemplo?",
+"Como a escola lida com essas situações?"
+]
+},
+
+{
+ordem:9,
+titulo:"REFLEXÃO FINAL SOBRE QUALIDADE DA ESCOLA",
+central:"O que, na sua visão, define hoje uma “escola de qualidade” para esta comunidade específica?",
+comuns:[
+"Quais aspectos deveriam ser considerados para dizer que uma escola oferece uma educação de qualidade?",
+"Existe algum momento ou espaço em que professores, gestores, estudantes e famílias discutem o que consideram importante para a escola?",
+"Se a escola pudesse definir indicadores próprios para avaliar a qualidade de seu trabalho, quais seriam eles?",
+"Como você percebe a autonomia da escola para definir seus rumos pedagógicos diante das orientações e metas estabelecidas pelo sistema de ensino?",
+"Como os resultados das avaliações externas entram na sua compreensão sobre a qualidade da escola?"
+]
+},
+
+{
+ordem:10,
+titulo:"ENCERRAMENTO",
+central:"Gostaria de acrescentar alguma consideração que não foi abordada durante a entrevista?",
+comuns:[]
+}
+
+];
+
+
+
+const $=id=>document.getElementById(id); let db, session, questions=[], saved=new Set(), rec, stream, busy=false, sending=false, timer, started, preview, lastBlob;
+function msg(t){$('msg').textContent=t}
+function openDB(){return new Promise((ok,no)=>{let r=indexedDB.open('AIPE_V2_QUEUE',1);r.onupgradeneeded=()=>r.result.createObjectStore('audio',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+function store(mode,fn){return new Promise((ok,no)=>{let tx=db.transaction('audio',mode),r=fn(tx.objectStore('audio'));tx.oncomplete=()=>ok(r.result);tx.onerror=()=>no(tx.error);tx.onabort=()=>no(tx.error)})}
+const all=()=>store('readonly',s=>s.getAll());const put=x=>store('readwrite',s=>s.put(x));const del=id=>store('readwrite',s=>s.delete(id));
+async function api(acao,dados){let r=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao,dados}),redirect:'follow'});if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json();if(!j.sucesso)throw Error(j.erro||'Falha no servidor');return j}
+function base64(blob){return new Promise((ok,no)=>{let r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.onerror=()=>no(r.error);r.readAsDataURL(blob)})}
+function duration(ms){return new Date(ms).toISOString().slice(11,19)}
+async function render(){let pending=(await all()).filter(x=>x.codigoParticipante===session.codigoParticipante);let ids=new Set(pending.map(x=>x.codigoQuestao));$('summary').textContent=`Salvas no Drive: ${saved.size} | Pendentes no celular: ${pending.length}`;$('list').replaceChildren();for(let q of questions){let d=document.createElement('div');d.textContent=q.id+' — '+(saved.has(q.id)?'Salvo no Drive':ids.has(q.id)?'Pendente de envio':'Não gravado');$('list').append(d)}let q=$('quest').value;$('start').disabled=busy||saved.has(q)||ids.has(q);$('quest').disabled=busy;$('backup').hidden=!pending.length; $('enunciado').textContent=questions.find(x=>x.id===q)?.text||'';}
+async function sync(){if(sending||!session)return;sending=true;try{let j=await api('statusRespostasV2',session);saved=new Set(j.respostas.map(x=>x.codigoQuestao));for(let x of (await all()).filter(x=>x.codigoParticipante===session.codigoParticipante)){if(!saved.has(x.codigoQuestao)){msg('Enviando '+x.id+' ao Drive…');await api('salvarRespostaV2',{...session,codigoQuestao:x.codigoQuestao,enunciado:x.enunciado,duracao:x.duracao,mimeType:x.blob.type,audioBase64:await base64(x.blob),gravacaoAutorizada:'SIM'});saved.add(x.codigoQuestao)}await del(x.id);await render()}msg('Envios conferidos.')}catch(e){msg('Envio não confirmado. Áudios pendentes preservados no celular. '+e.message)}finally{sending=false;await render()}}
+$('entrar').onclick=async()=>{try{let g=$('grupo').value,c=$('codigo').value.trim().toUpperCase(),prefix=g==='PROFESSOR'?'P':g==='DIRETOR'?'D':'T';if(!new RegExp('^'+prefix+'[0-9]{3}$').test(c)||!$('chave').value||!$('consent').checked)throw Error('Confira código, chave e autorização.');$('entrar').disabled=true;db=await openDB();session={codigoParticipante:c,chave:$('chave').value};let j=await api('statusRespostasV2',session);saved=new Set(j.respostas.map(x=>x.codigoQuestao));questions=[];for(let b of blocosBase){let id='Q'+String(b.ordem).padStart(2,'0');questions.push({id,text:b.central});let a=[...(b.comuns||[]),...(b[{DIRETOR:'diretor',ASSESSOR:'assessor',COORDENADOR:'coordenador'}[g]]||[])];a.forEach((text,i)=>questions.push({id:id+'_A'+String(i+1).padStart(2,'0'),text}))}for(let q of questions){let o=document.createElement('option');o.value=q.id;o.textContent=q.id+' — '+q.text;$('quest').append(o)}$('who').textContent=c+' — '+g;$('login').hidden=true;$('work').hidden=false;$('chave').value='';await render();sync()}catch(e){msg(e.message)}finally{$('entrar').disabled=false}};
+$('quest').onchange=render;$('retry').onclick=sync;window.addEventListener('online',sync);setInterval(()=>{if(session)sync()},45000);
+$('start').onclick=async()=>{if(busy)return;busy=true;await render();try{let q=questions.find(x=>x.id===$('quest').value);stream=await navigator.mediaDevices.getUserMedia({audio:true});try{rec=new MediaRecorder(stream,{audioBitsPerSecond:48000})}catch{rec=new MediaRecorder(stream)}let chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=async()=>{clearInterval(timer);stream.getTracks().forEach(t=>t.stop());let blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});lastBlob=blob;try{if(!blob.size)throw Error('Áudio vazio');await put({id:session.codigoParticipante+'_'+q.id,codigoParticipante:session.codigoParticipante,codigoQuestao:q.id,enunciado:q.text,duracao:duration(performance.now()-started),blob});if(preview)URL.revokeObjectURL(preview);preview=URL.createObjectURL(blob);$('player').src=preview;$('player').hidden=false;msg('Resposta preservada no celular. Pode selecionar outra questão.');busy=false;await render();sync()}catch(e){msg('Falha no armazenamento local. Baixe o áudio antes de continuar: '+e.message);$('backup').hidden=false;}};rec.start(1000);started=performance.now();timer=setInterval(()=>$('clock').textContent=duration(performance.now()-started),250);$('stop').disabled=false;msg('Gravando '+q.id)}catch(e){stream?.getTracks().forEach(t=>t.stop());busy=false;msg(e.message);await render()}};
+$('stop').onclick=()=>{if(rec?.state==='recording'){rec.stop();$('stop').disabled=true}};
+$('backup').onclick=async()=>{let x=(await all()).find(x=>x.codigoParticipante===session.codigoParticipante);let blob=busy&&lastBlob?lastBlob:x?.blob;if(!blob)return;let a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=(busy?session.codigoParticipante+'_'+$('quest').value:x.id)+'.'+(blob.type.includes('mp4')?'m4a':blob.type.includes('ogg')?'ogg':'webm');a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)};
+</script></html>
